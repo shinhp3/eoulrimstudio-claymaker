@@ -18,7 +18,7 @@ function resizeRenderer() {
 
 // ── Scene (Toss TDS palette) ─────────────────────────────────────────────────
 const BG = 0xf9fafb;
-const CLAY = 0x12489e;    // clay blue (slightly deeper)
+const CLAY = 0x0c3570;    // clay blue (deeper)
 const ACCENT = 0x3182f6;
 const WALL_THICKNESS_CM = 0.3; // fixed 3mm
 
@@ -46,7 +46,10 @@ window.addEventListener('orientationchange', () => setTimeout(resizeRenderer, 15
 
 const viewportEl = document.getElementById('viewport');
 if (viewportEl) {
-  new ResizeObserver(() => resizeRenderer()).observe(viewportEl);
+  new ResizeObserver(() => {
+    resizeRenderer();
+    if (mode === 'idle') fitCamera();
+  }).observe(viewportEl);
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => {
     viewportEl.addEventListener(ev, e => e.preventDefault(), { passive: false });
   });
@@ -82,6 +85,47 @@ function getActualSize() {
 }
 
 // ── Profile ───────────────────────────────────────────────────────────────────
+// Silhouette refs: classic vase (foot–body–shoulder–neck–rim), open ceramic bowl (base–curved wall–lip)
+function vaseShape(t) {
+  if (t < 0.07) {
+    const u = t / 0.07;
+    return 0.44 + u * 0.1;
+  }
+  if (t < 0.14) {
+    const u = (t - 0.07) / 0.07;
+    return 0.54 + u * 0.2;
+  }
+  if (t < 0.46) {
+    const u = (t - 0.14) / 0.32;
+    return 0.74 + 0.28 * Math.sin(u * Math.PI);
+  }
+  if (t < 0.7) {
+    const u = (t - 0.46) / 0.24;
+    return 1.02 - u * 0.7;
+  }
+  if (t < 0.88) {
+    const u = (t - 0.7) / 0.18;
+    return 0.32 + 0.03 * Math.sin(u * Math.PI);
+  }
+  const u = (t - 0.88) / 0.12;
+  return 0.3 + u * 0.14;
+}
+
+function bowlShape(t) {
+  if (t < 0.1) {
+    const u = t / 0.1;
+    return 0.3 + u * 0.12;
+  }
+  const u = (t - 0.1) / 0.9;
+  const curve = 1 - Math.pow(1 - u, 1.4);
+  let shape = 0.42 + 0.6 * curve;
+  if (t > 0.93) {
+    const lip = (t - 0.93) / 0.07;
+    shape += 0.04 * lip;
+  }
+  return Math.min(1.06, shape);
+}
+
 function makeProfile(type) {
   const baseR = widthCm / 2;
   const out = [];
@@ -89,30 +133,9 @@ function makeProfile(type) {
     const t = i/(N-1), y = -PHT/2 + t*PHT;
     let r;
     if (type === 'vase') {
-      let shape;
-      if (t < 0.1) {
-        shape = 0.4 + t * 1.8;
-      } else if (t < 0.52) {
-        const u = (t - 0.1) / 0.42;
-        shape = 0.52 + 0.5 * Math.sin(u * Math.PI);
-      } else if (t < 0.8) {
-        const u = (t - 0.52) / 0.28;
-        shape = 1.02 - u * 0.65;
-      } else {
-        const u = (t - 0.8) / 0.2;
-        shape = 0.37 + 0.1 * Math.sin(u * Math.PI);
-      }
-      r = baseR * shape;
+      r = baseR * vaseShape(t);
     } else if (type === 'bowl') {
-      let shape;
-      if (t < 0.14) {
-        shape = 0.36 + t * 1.4;
-      } else {
-        const u = (t - 0.14) / 0.86;
-        shape = 0.55 + 0.48 * (1 - Math.cos(u * Math.PI * 0.55));
-      }
-      if (t > 0.92) shape *= 0.97;
-      r = baseR * Math.min(1.02, shape);
+      r = baseR * bowlShape(t);
     } else {
       r = baseR;
     }
@@ -126,7 +149,7 @@ let profile = makeProfile('cylinder'), lastPreset = 'cylinder';
 // ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
   color: CLAY, roughness: 0.42, metalness: 0.08,
-  emissive: 0x1a5fc7, emissiveIntensity: 0.12
+  emissive: 0x0f4588, emissiveIntensity: 0.1
 });
 
 let clayGroup = null;
@@ -288,11 +311,25 @@ function getObjectSpan() {
   return Math.max(height, diameter, SIZE_MIN);
 }
 
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
 function fitCamera() {
   const span = getObjectSpan();
-  orbit.radius = span * 3.5;
-  orbit.zoomMin = span * 1.5;
+  const r = canvasRect();
+  const aspect = r.width / Math.max(1, r.height);
+  const tallView = aspect < 0.72;
+  const fill = isMobileLayout()
+    ? (tallView ? 2.85 : 3.15)
+    : 3.5;
+  orbit.radius = span * fill;
+  orbit.zoomMin = span * 1.4;
   orbit.zoomMax = span * 15;
+  if (isMobileLayout()) {
+    orbit.phi = Math.min(1.15, Math.max(0.92, orbit.phi));
+    orbit.theta = 0;
+  }
   updateFloor();
   updateCamera();
 }
@@ -395,7 +432,7 @@ function onPointerMove(e) {
   }
 
   if (pointers.size === 1 && mode === 'sculpt') {
-    applySculptDrag(e.clientX, e.pointerType === 'touch');
+    applySculptDrag(e.clientX);
   } else if (pointers.size === 1 && mode === 'orbit') {
     applyOrbitDrag(e.clientX, e.clientY);
   }
@@ -437,11 +474,10 @@ function applyOrbitDrag(clientX, clientY) {
   updateCamera();
 }
 
-function applySculptDrag(clientX, isTouch) {
+function applySculptDrag(clientX) {
   const dx = clientX - lastClientX;
   lastClientX = clientX;
-  const sign = isTouch ? -1 : 1;
-  applyEdit(selRing, dx * 0.02 * sign);
+  applyEdit(selRing, dx * 0.02);
 }
 
 function setStatus(text, active = false) {
@@ -500,9 +536,6 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
   zoomBy(1 + e.deltaY * 0.0012);
 }, { passive: false });
-
-document.getElementById('zoomIn')?.addEventListener('click', () => zoomBy(0.88));
-document.getElementById('zoomOut')?.addEventListener('click', () => zoomBy(1.14));
 
 // ── Height & Width controls ───────────────────────────────────────────────────
 function applyHeightChange(cm) {
