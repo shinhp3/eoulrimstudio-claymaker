@@ -8,11 +8,12 @@ const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
 const BG = 0xf9fafb;
 const CLAY = 0x1957c2;    // darker blue
 const ACCENT = 0x3182f6;
-const WALL_THICKNESS_CM = 0.5; // fixed 5mm
+const WALL_THICKNESS_CM = 0.3; // fixed 3mm
 
 const SIZE_MIN = 0.5;
-const H_MAX = 50;
-const W_MAX = 20;
+const SIZE_MAX = 20;
+const H_MAX = SIZE_MAX;
+const W_MAX = SIZE_MAX;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
@@ -43,11 +44,11 @@ fill.position.set(-25, 15, -10);
 scene.add(fill);
 
 // ── Scale: 1 Three.js unit = 1 cm ───────────────────────────────────────────
-let heightCm = 5, widthCm = 5;
+let heightCm = 10, widthCm = 10;
 let PHT = heightCm;
 const N = 30, SEG = 80;
 const MIN_R = 0.05;
-const MAX_R = 30;
+const MAX_R = SIZE_MAX / 2;
 
 function clampDim(cm, min, max) {
   return Math.max(min, Math.min(max, Math.round(cm * 2) / 2));
@@ -69,12 +70,30 @@ function makeProfile(type) {
     const t = i/(N-1), y = -PHT/2 + t*PHT;
     let r;
     if (type === 'vase') {
-      const v = 0.12 + Math.sin(t*Math.PI)*0.68 + Math.sin(t*Math.PI*1.9+0.3)*0.13;
-      r = baseR * (v / 0.93);
-      if (t > 0.88) r = baseR * 0.22;
+      let shape;
+      if (t < 0.1) {
+        shape = 0.4 + t * 1.8;
+      } else if (t < 0.52) {
+        const u = (t - 0.1) / 0.42;
+        shape = 0.52 + 0.5 * Math.sin(u * Math.PI);
+      } else if (t < 0.8) {
+        const u = (t - 0.52) / 0.28;
+        shape = 1.02 - u * 0.65;
+      } else {
+        const u = (t - 0.8) / 0.2;
+        shape = 0.37 + 0.1 * Math.sin(u * Math.PI);
+      }
+      r = baseR * shape;
     } else if (type === 'bowl') {
-      r = baseR * ((0.14 + Math.sin(t*Math.PI*0.82)*0.72) / 0.86);
-      if (t > 0.88) r = Math.max(baseR * 0.45, r);
+      let shape;
+      if (t < 0.14) {
+        shape = 0.36 + t * 1.4;
+      } else {
+        const u = (t - 0.14) / 0.86;
+        shape = 0.55 + 0.48 * (1 - Math.cos(u * Math.PI * 0.55));
+      }
+      if (t > 0.92) shape *= 0.97;
+      r = baseR * Math.min(1.02, shape);
     } else {
       r = baseR;
     }
@@ -85,52 +104,110 @@ function makeProfile(type) {
 
 let profile = makeProfile('cylinder'), lastPreset = 'cylinder';
 
-// ── Clay meshes ───────────────────────────────────────────────────────────────
+// ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
   color: CLAY, roughness: 0.42, metalness: 0.08,
   emissive: 0x1a5fc7, emissiveIntensity: 0.12
 });
-let clayMesh = null, bottomCap = null, topCap = null, posAttr = null;
 
-function createSide() {
-  if (clayMesh) { scene.remove(clayMesh); clayMesh.geometry.dispose(); }
-  const geo = new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(p.r,p.y)), SEG);
-  clayMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    color: CLAY, roughness: 0.42, metalness: 0.08,
-    emissive: 0x1a5fc7, emissiveIntensity: 0.12,
-    side: THREE.DoubleSide
-  }));
-  clayMesh.castShadow = true; clayMesh.receiveShadow = true;
-  scene.add(clayMesh); posAttr = geo.attributes.position;
+let clayGroup = null;
+let clayWall = null;
+let clayBottom = null;
+
+function innerRadius(outerR) {
+  return Math.max(0.02, outerR - WALL_THICKNESS_CM);
 }
 
-function updateBottomCap() {
-  if (bottomCap) { scene.remove(bottomCap); bottomCap.geometry.dispose(); }
-  bottomCap = new THREE.Mesh(new THREE.CircleGeometry(profile[0].r, SEG), clayMat);
-  bottomCap.rotation.x = -Math.PI/2; bottomCap.position.y = profile[0].y;
-  scene.add(bottomCap);
+// Closed cross-section: outer wall → top rim → inner wall → bottom rim (5mm wall)
+function makeWallShellPoints() {
+  const pts = [];
+  profile.forEach(p => pts.push(new THREE.Vector2(p.r, p.y)));
+  for (let i = profile.length - 1; i >= 0; i--) {
+    pts.push(new THREE.Vector2(innerRadius(profile[i].r), profile[i].y));
+  }
+  return pts;
 }
 
-function updateTopCap() {
-  if (topCap) { scene.remove(topCap); topCap.geometry.dispose(); }
-  topCap = new THREE.Mesh(new THREE.CircleGeometry(profile[N-1].r, SEG), clayMat);
-  topCap.rotation.x = Math.PI/2; topCap.position.y = profile[N-1].y;
-  scene.add(topCap);
+function disposeClayPart(mesh) {
+  if (!mesh) return;
+  mesh.geometry.dispose();
+  mesh.material.dispose();
 }
 
-function createClay() { createSide(); updateBottomCap(); updateTopCap(); updateSizeGuide(); }
+function getClayPickTargets() {
+  return [clayWall, clayBottom].filter(Boolean);
+}
+
+function buildClayMeshes() {
+  if (clayGroup) {
+    scene.remove(clayGroup);
+    disposeClayPart(clayWall);
+    disposeClayPart(clayBottom);
+    clayGroup = null;
+  }
+
+  clayGroup = new THREE.Group();
+
+  const wallGeo = new THREE.LatheGeometry(makeWallShellPoints(), SEG);
+  wallGeo.computeVertexNormals();
+  const wallMat = clayMat.clone();
+  wallMat.side = THREE.FrontSide;
+  clayWall = new THREE.Mesh(wallGeo, wallMat);
+
+  const yMin = profile.reduce((m, p) => Math.min(m, p.y), Infinity);
+  const bottomR = profile.reduce((best, p) => (p.y <= yMin + 1e-6 ? Math.max(best, p.r) : best), 0);
+  const bottomMat = clayMat.clone();
+  bottomMat.side = THREE.DoubleSide;
+  clayBottom = new THREE.Mesh(new THREE.CircleGeometry(bottomR, SEG), bottomMat);
+  clayBottom.rotation.x = -Math.PI / 2;
+  clayBottom.position.y = yMin - 0.002;
+
+  [clayWall, clayBottom].forEach(m => {
+    m.castShadow = true;
+    m.receiveShadow = true;
+    clayGroup.add(m);
+  });
+
+  scene.add(clayGroup);
+}
+
+function updateActualSizeDisplay() {
+  const actualWidthEl = document.getElementById('actualWidth');
+  const actualHeightEl = document.getElementById('actualHeight');
+  if (!actualWidthEl || !actualHeightEl) return;
+  const { diameter, height } = getActualSize();
+  actualWidthEl.textContent = diameter.toFixed(1);
+  actualHeightEl.textContent = height.toFixed(1);
+}
+
+function syncUI() {
+  const hS = document.getElementById('heightSlider');
+  const hI = document.getElementById('heightInput');
+  const wS = document.getElementById('widthSlider');
+  const wI = document.getElementById('widthInput');
+  if (hS && hI) {
+    hS.value = heightCm;
+    hI.value = heightCm;
+    hS.style.setProperty('--pct', ((heightCm - SIZE_MIN) / (H_MAX - SIZE_MIN) * 100).toFixed(1) + '%');
+  }
+  if (wS && wI) {
+    wS.value = widthCm;
+    wI.value = widthCm;
+    wS.style.setProperty('--pct', ((widthCm - SIZE_MIN) / (W_MAX - SIZE_MIN) * 100).toFixed(1) + '%');
+  }
+  updateActualSizeDisplay();
+}
+
+function createClay() {
+  buildClayMeshes();
+  updateSizeGuide();
+  updateActualSizeDisplay();
+}
 
 function updateClayFast() {
-  for (let i=0; i<=SEG; i++) {
-    const phi=(i/SEG)*Math.PI*2, s=Math.sin(phi), c=Math.cos(phi);
-    for (let j=0; j<N; j++) {
-      posAttr.setX(i*N+j, profile[j].r*s);
-      posAttr.setZ(i*N+j, profile[j].r*c);
-    }
-  }
-  posAttr.needsUpdate = true;
-  clayMesh.geometry.computeVertexNormals();
-  updateBottomCap(); updateTopCap(); updateSizeGuide();
+  buildClayMeshes();
+  updateSizeGuide();
+  updateActualSizeDisplay();
 }
 
 // Floor + cm grid (scaled to model size)
@@ -174,10 +251,13 @@ function updateSizeGuide() {
   scene.add(sizeGuide);
 }
 
-// Highlight ring
-const hlMat = new THREE.MeshBasicMaterial({ color:ACCENT, transparent:true, opacity:0 });
-const hlRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 8, 72), hlMat);
-hlRing.rotation.x = Math.PI/2; scene.add(hlRing);
+// Sculpt grip indicator (ring + marker on surface)
+const hlMat = new THREE.MeshBasicMaterial({ color: ACCENT, transparent: true, opacity: 0 });
+const hlMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+const hlRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 20, 72), hlMat);
+hlRing.rotation.x = Math.PI / 2;
+const hlMarker = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 20), hlMarkerMat);
+scene.add(hlRing, hlMarker);
 
 createClay();
 
@@ -237,15 +317,32 @@ function applyEdit(idx, delta) {
     const w = Math.exp(-((i-idx)*(i-idx))/(2*sig*sig));
     p.r = Math.max(MIN_R, Math.min(MAX_R, p.r + delta*w));
   });
-  updateClayFast(); updateHighlight(); drawProfile();
+  updateClayFast(); updateHighlight(); updateActualSizeDisplay();
 }
 
 function updateHighlight() {
-  if (selRing<0) { hlMat.opacity=0; barDotEl.style.opacity='0'; return; }
+  if (selRing < 0) {
+    hlMat.opacity = 0;
+    hlMarkerMat.opacity = 0;
+    barDotEl.style.opacity = '0';
+    return;
+  }
   const p = profile[selRing];
-  hlRing.position.y = p.y; hlRing.scale.set(p.r, 1, p.r); hlMat.opacity=0.5;
-  const t = selRing/(N-1);
-  barDotEl.style.top = ((1-t)*VBAR_H)+'px'; barDotEl.style.opacity='1';
+  const grip = Math.max(0.35, p.r * 1.1);
+  const markerSize = Math.max(0.45, p.r * 0.2);
+
+  hlRing.position.y = p.y;
+  hlRing.scale.set(grip, grip, grip);
+  hlMat.opacity = 0.88;
+
+  hlMarker.position.set(p.r * 1.03, p.y, 0);
+  hlMarker.scale.set(markerSize, markerSize, markerSize);
+  hlMarkerMat.opacity = 0.95;
+
+  const t = selRing / (N - 1);
+  barDotEl.style.top = ((1 - t) * VBAR_H) + 'px';
+  barDotEl.style.opacity = '1';
+  barDotEl.classList.add('active');
 }
 
 // Unified pointer down: try sculpt → fallback to orbit
@@ -253,7 +350,7 @@ canvas.addEventListener('mousedown', e=>{
   if (e.button !== 0) return;
   const ndc = new THREE.Vector2((e.clientX/W())*2-1, -(e.clientY/H())*2+1);
   raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObjects([clayMesh, bottomCap, topCap].filter(Boolean));
+  const hits = raycaster.intersectObjects(getClayPickTargets());
   if (hits.length) {
     mode = 'sculpt';
     selRing = getRing(hits[0].point.y); lastClientX = e.clientX;
@@ -282,11 +379,13 @@ canvas.addEventListener('mousemove', e=>{
 
 canvas.addEventListener('mouseup', ()=>{
   mode='idle'; selRing=-1; canvas.style.cursor='crosshair';
-  hlMat.opacity=0; barDotEl.style.opacity='0';
+  hlMat.opacity=0; hlMarkerMat.opacity=0; barDotEl.style.opacity='0';
+  barDotEl.classList.remove('active');
   setStatus(READY_STATUS);
 });
 canvas.addEventListener('mouseleave', ()=>{
-  mode='idle'; selRing=-1; hlMat.opacity=0; barDotEl.style.opacity='0';
+  mode='idle'; selRing=-1; hlMat.opacity=0; hlMarkerMat.opacity=0;
+  barDotEl.style.opacity='0'; barDotEl.classList.remove('active');
   setStatus(READY_STATUS);
 });
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
@@ -302,7 +401,7 @@ canvas.addEventListener('touchstart', e=>{
   const t = e.touches[0];
   const ndc = new THREE.Vector2((t.clientX/W())*2-1, -(t.clientY/H())*2+1);
   raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObjects([clayMesh,bottomCap,topCap].filter(Boolean));
+  const hits = raycaster.intersectObjects(getClayPickTargets());
   if (hits.length) {
     mode='sculpt'; selRing=getRing(hits[0].point.y); lastClientX=t.clientX;
     setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
@@ -323,7 +422,8 @@ canvas.addEventListener('touchmove', e=>{
   }
 },{passive:false});
 canvas.addEventListener('touchend', ()=>{
-  mode='idle'; selRing=-1; hlMat.opacity=0; barDotEl.style.opacity='0';
+  mode='idle'; selRing=-1; hlMat.opacity=0; hlMarkerMat.opacity=0;
+  barDotEl.style.opacity='0'; barDotEl.classList.remove('active');
   setStatus(READY_STATUS);
 });
 
@@ -334,7 +434,7 @@ function applyHeightChange(cm) {
   profile.forEach(p=>{ p.y *= scale; });
   PHT = newCm; heightCm = newCm;
   orbit.targetY = 0;
-  createClay(); drawProfile(); syncUI(); fitCamera();
+  createClay(); syncUI(); fitCamera();
 }
 
 function applyWidthChange(cm) {
@@ -342,16 +442,7 @@ function applyWidthChange(cm) {
   const scale = newCm / widthCm;
   profile.forEach(p=>{ p.r = Math.max(MIN_R, p.r * scale); });
   widthCm = newCm;
-  updateClayFast(); drawProfile(); syncUI(); fitCamera();
-}
-
-function syncUI() {
-  const hS=document.getElementById('heightSlider'), hI=document.getElementById('heightInput');
-  const wS=document.getElementById('widthSlider'),  wI=document.getElementById('widthInput');
-  hS.value=heightCm; hI.value=heightCm;
-  hS.style.setProperty('--pct', ((heightCm-SIZE_MIN)/(H_MAX-SIZE_MIN)*100).toFixed(1)+'%');
-  wS.value=widthCm;  wI.value=widthCm;
-  wS.style.setProperty('--pct', ((widthCm-SIZE_MIN)/(W_MAX-SIZE_MIN)*100).toFixed(1)+'%');
+  updateClayFast(); syncUI(); fitCamera();
 }
 
 const pctH = (v)=>((v-SIZE_MIN)/(H_MAX-SIZE_MIN)*100).toFixed(1)+'%';
@@ -370,73 +461,21 @@ wIn.addEventListener('keydown',e=>{ if(e.key==='Enter')wIn.blur(); });
 // ── Buttons ───────────────────────────────────────────────────────────────────
 function loadPreset(type) {
   lastPreset=type; profile=makeProfile(type);
-  createClay(); drawProfile(); fitCamera();
+  createClay(); syncUI(); fitCamera();
 }
 document.getElementById('btnSmooth').addEventListener('click',()=>{
   profile=profile.map((p,i,a)=>({...p,r:i===0||i===N-1?p.r:a[i-1].r*0.25+p.r*0.5+a[i+1].r*0.25}));
-  updateClayFast(); drawProfile();
+  updateClayFast();
 });
 document.getElementById('btnVase' ).addEventListener('click',()=>loadPreset('vase'));
 document.getElementById('btnBowl' ).addEventListener('click',()=>loadPreset('bowl'));
 document.getElementById('btnCyl'  ).addEventListener('click',()=>loadPreset('cylinder'));
 document.getElementById('btnReset').addEventListener('click',()=>{
-  heightCm=5; widthCm=5; PHT=5;
+  heightCm=10; widthCm=10; PHT=10;
   loadPreset('cylinder');
-  syncUI();
 });
 
-// ── Profile 2D canvas ─────────────────────────────────────────────────────────
-const pCanvas=document.getElementById('profileCanvas');
-const pCtx=pCanvas.getContext('2d');
-const PW=pCanvas.width, PC_H=pCanvas.height, PM=6;
-
-function drawProfile() {
-  pCtx.clearRect(0,0,PW,PC_H);
-  const yMin = Math.min(...profile.map(p => p.y));
-  const yMax = Math.max(...profile.map(p => p.y));
-  const actualH = yMax - yMin;
-  const refR = widthCm / 2;
-  const scale = Math.min((PW / 2 - PM) / refR, (PC_H - 2 * PM) / actualH);
-
-  pCtx.beginPath(); pCtx.moveTo(PW/2,PM); pCtx.lineTo(PW/2,PC_H-PM);
-  pCtx.setLineDash([2,3]); pCtx.strokeStyle='rgba(139,149,161,.25)'; pCtx.lineWidth=.5; pCtx.stroke(); pCtx.setLineDash([]);
-
-  pCtx.beginPath();
-  profile.forEach((p,i)=>{
-    const x=PW/2+p.r*scale;
-    const y=PC_H-PM-(p.y-yMin)*scale;
-    i===0?pCtx.moveTo(x,y):pCtx.lineTo(x,y);
-  });
-  for(let i=N-1;i>=0;i--){
-    const x=PW/2-profile[i].r*scale;
-    const y=PC_H-PM-(profile[i].y-yMin)*scale;
-    pCtx.lineTo(x,y);
-  }
-  pCtx.closePath(); pCtx.fillStyle='rgba(49,130,246,.08)'; pCtx.fill();
-
-  [[0,yMin],[N-1,yMax]].forEach(([ri])=>{
-    const ly=PC_H-PM-(profile[ri].y-yMin)*scale;
-    const lx=PW/2+profile[ri].r*scale;
-    pCtx.beginPath(); pCtx.moveTo(PW/2-profile[ri].r*scale,ly); pCtx.lineTo(lx,ly);
-    pCtx.strokeStyle='rgba(49,130,246,.45)'; pCtx.lineWidth=1.3; pCtx.stroke();
-  });
-
-  pCtx.beginPath();
-  profile.forEach((p,i)=>{ const x=PW/2+p.r*scale, y=PC_H-PM-(p.y-yMin)*scale; i===0?pCtx.moveTo(x,y):pCtx.lineTo(x,y); });
-  pCtx.strokeStyle='rgba(49,130,246,.7)'; pCtx.lineWidth=1.4; pCtx.stroke();
-
-  pCtx.beginPath();
-  profile.forEach((p,i)=>{ const x=PW/2-p.r*scale, y=PC_H-PM-(p.y-yMin)*scale; i===0?pCtx.moveTo(x,y):pCtx.lineTo(x,y); });
-  pCtx.strokeStyle='rgba(49,130,246,.25)'; pCtx.lineWidth=.8; pCtx.stroke();
-
-  if(selRing>=0){
-    const y=PC_H-PM-(profile[selRing].y-yMin)*scale;
-    pCtx.beginPath(); pCtx.moveTo(0,y); pCtx.lineTo(PW,y);
-    pCtx.strokeStyle='rgba(49,130,246,.85)'; pCtx.lineWidth=1.2; pCtx.stroke();
-  }
-}
-
-drawProfile(); syncUI(); setStatus(READY_STATUS);
+syncUI(); setStatus(READY_STATUS);
 
 // ── Animate (no rotation) ─────────────────────────────────────────────────────
 function animate() {
