@@ -84,89 +84,202 @@ function getActualSize() {
 
 // ── Presets (가로 cm × 높이 cm) ─────────────────────────────────────────────
 const PRESETS = {
+  cylinder: { widthCm: 10,  heightCm: 10 },
   vase:     { widthCm: 7.5, heightCm: 13 },
   plate:    { widthCm: 19,  heightCm: 2.5 },
   ricebowl: { widthCm: 11,  heightCm: 6 },
 };
 
-// Celadon vase: foot → lower belly → shoulder → slender neck → rim flare
+// 사용자 조각 접시 (19×2.5 cm) — exportClayProfile() 로보낸 형태
+const PLATE_PROFILE_BAKED = [
+  { r: 6.826, y: -1.25 }, { r: 6.916, y: -1.164 }, { r: 7.007, y: -1.078 },
+  { r: 7.101, y: -0.991 }, { r: 7.198, y: -0.905 }, { r: 7.299, y: -0.819 },
+  { r: 7.405, y: -0.733 }, { r: 7.516, y: -0.647 }, { r: 7.633, y: -0.56 },
+  { r: 7.756, y: -0.474 }, { r: 7.883, y: -0.388 }, { r: 8.013, y: -0.302 },
+  { r: 8.146, y: -0.216 }, { r: 8.28, y: -0.129 }, { r: 8.414, y: -0.043 },
+  { r: 8.546, y: 0.043 }, { r: 8.674, y: 0.129 }, { r: 8.797, y: 0.216 },
+  { r: 8.915, y: 0.302 }, { r: 9.027, y: 0.388 }, { r: 9.132, y: 0.474 },
+  { r: 9.231, y: 0.56 }, { r: 9.325, y: 0.647 }, { r: 9.413, y: 0.733 },
+  { r: 9.497, y: 0.819 }, { r: 9.577, y: 0.905 }, { r: 9.655, y: 0.991 },
+  { r: 9.731, y: 1.078 }, { r: 9.806, y: 1.164 }, { r: 9.88, y: 1.25 }
+];
+
+function cloneProfile(pts) {
+  return pts.map(p => ({ r: p.r, y: p.y }));
+}
+
+function lerpKeyframes(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  if (t >= keys[keys.length - 1][0]) return keys[keys.length - 1][1];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [t0, v0] = keys[i];
+    const [t1, v1] = keys[i + 1];
+    if (t >= t0 && t <= t1) {
+      const u = (t - t0) / (t1 - t0);
+      const s = u * u * (3 - 2 * u);
+      return v0 + (v1 - v0) * s;
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+
+// Celadon pear vase: 받침 → 하부 볼록(최대 직경) → S자 어깨·목 → 얇은 입술
 function vaseShape(t) {
-  if (t < 0.06) {
-    const u = t / 0.06;
-    return 0.36 + u * 0.08;
-  }
-  if (t < 0.12) {
-    const u = (t - 0.06) / 0.06;
-    return 0.44 + u * 0.16;
-  }
-  if (t < 0.4) {
-    const u = (t - 0.12) / 0.28;
-    return 0.6 + 0.44 * Math.sin(u * Math.PI * 0.92);
-  }
-  if (t < 0.7) {
-    const u = (t - 0.4) / 0.3;
-    return 1.04 - u * 0.76;
-  }
-  if (t < 0.9) {
-    const u = (t - 0.7) / 0.2;
-    return 0.28 + 0.02 * Math.sin(u * Math.PI);
-  }
-  const u = (t - 0.9) / 0.1;
-  return 0.28 + u * 0.14;
+  return lerpKeyframes(t, [
+    [0,    0.36],
+    [0.04, 0.40],
+    [0.08, 0.44],
+    [0.16, 0.72],
+    [0.26, 0.94],
+    [0.32, 1.00],
+    [0.42, 0.90],
+    [0.54, 0.76],
+    [0.64, 0.58],
+    [0.74, 0.40],
+    [0.82, 0.28],
+    [0.90, 0.26],
+    [0.96, 0.30],
+    [1.0,  0.34],
+  ]);
 }
 
-// Shallow plate: flat well → foot ring → gentle slope → upturned rim
-function plateShape(t) {
-  if (t < 0.1) {
-    const u = t / 0.1;
-    return 0.1 + u * 0.1;
-  }
-  if (t < 0.2) {
-    const u = (t - 0.1) / 0.1;
-    return 0.2 + u * 0.5;
-  }
-  if (t < 0.78) {
-    const u = (t - 0.2) / 0.58;
-    return 0.7 + 0.28 * (1 - Math.pow(1 - u, 0.9));
-  }
-  const u = (t - 0.78) / 0.22;
-  return 0.98 + 0.05 * u;
-}
-
-// Footed rice bowl: short foot → curved wall → wide rim
+// Footed rice bowl: 평바닥·받침 → 벽 → 입
 function riceBowlShape(t) {
-  if (t < 0.17) {
-    const u = t / 0.17;
-    if (u < 0.32) return 0.18 + (u / 0.32) * 0.24;
-    return 0.42 + ((u - 0.32) / 0.68) * 0.06;
+  if (t < 0.14) return 0.44;
+  if (t < 0.2) {
+    const u = (t - 0.14) / 0.06;
+    return 0.44 + u * 0.06;
   }
   if (t < 0.88) {
-    const u = (t - 0.17) / 0.71;
-    return 0.48 + 0.52 * (1 - Math.pow(1 - u, 1.12));
+    const u = (t - 0.2) / 0.68;
+    return 0.5 + 0.5 * (1 - Math.pow(1 - u, 1.12));
   }
   const u = (t - 0.88) / 0.12;
   return 1.0 + 0.025 * u;
 }
 
+// 밥그릇: 받침은 원판, 벽은 받침 가장자리에서만 시작
+function makeRiceBowlProfile() {
+  const baseR = widthCm / 2;
+  const yMin = -PHT / 2;
+  const yMax = PHT / 2;
+  const footR = baseR * 0.5;
+  const yRise = Math.max(0.04, PHT * 0.05);
+  const pts = [
+    { r: footR, y: yMin },
+    { r: footR, y: yMin + yRise },
+  ];
+  const nWall = Math.max(14, N - 2);
+  for (let i = 2; i <= nWall; i++) {
+    const u = (i - 1) / (nWall - 1);
+    const mul = riceBowlShape(0.14 + u * 0.86);
+    const y = yMin + yRise + (yMax - yMin - yRise) * Math.pow(u, 0.92);
+    pts.push({ r: Math.max(MIN_R, baseR * Math.min(1.03, mul)), y });
+  }
+  return pts;
+}
+
+function smoothProfileOnce(pts) {
+  const last = pts.length - 1;
+  return pts.map((p, i, a) => ({
+    ...p,
+    r: i === 0 || i === last
+      ? p.r
+      : a[i - 1].r * 0.25 + p.r * 0.5 + a[i + 1].r * 0.25
+  }));
+}
+
+function smoothProfile(pts, passes = 1) {
+  let out = pts;
+  for (let k = 0; k < passes; k++) out = smoothProfileOnce(out);
+  return out;
+}
+
 function makeProfile(type) {
+  if (type === 'plate') return cloneProfile(PLATE_PROFILE_BAKED);
+  if (type === 'ricebowl') return makeRiceBowlProfile();
+
   const baseR = widthCm / 2;
   const out = [];
   for (let i = 0; i < N; i++) {
     const t = i/(N-1), y = -PHT/2 + t*PHT;
     let mul = 1;
     if (type === 'vase') mul = vaseShape(t);
-    else if (type === 'plate') mul = plateShape(t);
-    else if (type === 'ricebowl') mul = riceBowlShape(t);
     out.push({ r: Math.max(MIN_R, baseR * mul), y });
   }
+  if (type === 'vase') return smoothProfile(out, 2);
   return out;
 }
 
-let widthCm = PRESETS.ricebowl.widthCm;
-let heightCm = PRESETS.ricebowl.heightCm;
+let widthCm = PRESETS.cylinder.widthCm;
+let heightCm = PRESETS.cylinder.heightCm;
 let PHT = heightCm;
-let profile = makeProfile('ricebowl');
-let lastPreset = 'ricebowl';
+let profile = makeProfile('cylinder');
+let lastPreset = 'cylinder';
+
+const HISTORY_MAX = 40;
+const undoStack = [];
+const redoStack = [];
+
+function captureHistoryState() {
+  return {
+    profile: cloneProfile(profile),
+    widthCm,
+    heightCm,
+    PHT,
+    lastPreset
+  };
+}
+
+function applyHistoryState(snap) {
+  profile = cloneProfile(snap.profile);
+  widthCm = snap.widthCm;
+  heightCm = snap.heightCm;
+  PHT = snap.heightCm;
+  lastPreset = snap.lastPreset;
+  createClay();
+  syncUI();
+  updateActualSizeDisplay();
+  updateFloor();
+}
+
+function updateHistoryButtons() {
+  const undoBtn = document.getElementById('btnUndo');
+  const redoBtn = document.getElementById('btnRedo');
+  if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+  if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+}
+
+function pushUndoState() {
+  undoStack.push(captureHistoryState());
+  if (undoStack.length > HISTORY_MAX) undoStack.shift();
+  redoStack.length = 0;
+  updateHistoryButtons();
+}
+
+function clearHistoryStacks() {
+  undoStack.length = 0;
+  redoStack.length = 0;
+  updateHistoryButtons();
+}
+
+function undoProfile() {
+  if (!undoStack.length) return;
+  redoStack.push(captureHistoryState());
+  if (redoStack.length > HISTORY_MAX) redoStack.shift();
+  applyHistoryState(undoStack.pop());
+  updateHistoryButtons();
+  setStatus('되돌아가기');
+}
+
+function redoProfile() {
+  if (!redoStack.length) return;
+  undoStack.push(captureHistoryState());
+  if (undoStack.length > HISTORY_MAX) undoStack.shift();
+  applyHistoryState(redoStack.pop());
+  updateHistoryButtons();
+  setStatus('되돌리기');
+}
 
 // ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
@@ -219,12 +332,15 @@ function buildClayMeshes() {
   clayWall = new THREE.Mesh(wallGeo, wallMat);
 
   const yMin = profile.reduce((m, p) => Math.min(m, p.y), Infinity);
-  const bottomR = profile.reduce((best, p) => (p.y <= yMin + 1e-6 ? Math.max(best, p.r) : best), 0);
+  const bottomPts = profile.filter(p => p.y <= yMin + 1e-5);
+  const bottomR = bottomPts.length
+    ? Math.max(...bottomPts.map(p => p.r))
+    : profile[0].r;
   const bottomMat = clayMat.clone();
   bottomMat.side = THREE.DoubleSide;
   clayBottom = new THREE.Mesh(new THREE.CircleGeometry(bottomR, SEG), bottomMat);
   clayBottom.rotation.x = -Math.PI / 2;
-  clayBottom.position.y = yMin - 0.002;
+  clayBottom.position.y = yMin;
 
   [clayWall, clayBottom].forEach(m => {
     m.castShadow = true;
@@ -315,13 +431,15 @@ function updateSizeGuide() {
   scene.add(sizeGuide);
 }
 
-// Sculpt grip indicator (ring + marker on surface)
-const hlMat = new THREE.MeshBasicMaterial({ color: ACCENT, transparent: true, opacity: 0 });
-const hlMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-const hlRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 20, 72), hlMat);
-hlRing.rotation.x = Math.PI / 2;
-const hlMarker = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 20), hlMarkerMat);
-scene.add(hlRing, hlMarker);
+// Sculpt grip: 잡은 위치에만 붙는 원형 패치 (전체 둘레 도넛 X)
+const hlMat = new THREE.MeshBasicMaterial({
+  color: ACCENT, transparent: true, opacity: 0,
+  side: THREE.DoubleSide, depthTest: true, depthWrite: false
+});
+const hlDisc = new THREE.Mesh(new THREE.CircleGeometry(1, 28), hlMat);
+scene.add(hlDisc);
+
+let sculptTheta = 0;
 
 createClay();
 
@@ -417,8 +535,11 @@ function startSinglePointer(e) {
   raycaster.setFromCamera(ndcFromClient(e.clientX, e.clientY), camera);
   const hits = raycaster.intersectObjects(getClayPickTargets());
   if (hits.length) {
+    pushUndoState();
     mode = 'sculpt';
-    selRing = getRing(hits[0].point.y);
+    const pt = hits[0].point;
+    selRing = getRing(pt.y);
+    sculptTheta = Math.atan2(pt.z, pt.x);
     lastClientX = e.clientX;
     setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
     updateHighlight();
@@ -483,7 +604,6 @@ function endInteraction() {
   selRing = -1;
   canvas.style.cursor = 'crosshair';
   hlMat.opacity = 0;
-  hlMarkerMat.opacity = 0;
   barDotEl.style.opacity = '0';
   barDotEl.classList.remove('active');
   setStatus(READY_STATUS);
@@ -524,26 +644,46 @@ function applyEdit(idx, delta) {
   updateClayFast(); updateHighlight(); updateActualSizeDisplay();
 }
 
+function surfaceNormalAtRing(idx, theta) {
+  const i0 = Math.max(0, idx - 1);
+  const i1 = Math.min(profile.length - 1, idx + 1);
+  const p0 = profile[i0];
+  const p1 = profile[i1];
+  const dy = p1.y - p0.y || 1e-6;
+  const dr = p1.r - p0.r;
+  const ny = -dr / Math.hypot(dr, dy);
+  const nr = dy / Math.hypot(dr, dy);
+  const n = new THREE.Vector3(
+    nr * Math.cos(theta),
+    ny,
+    nr * Math.sin(theta)
+  );
+  return n.lengthSq() > 1e-8 ? n.normalize() : new THREE.Vector3(Math.cos(theta), 0, Math.sin(theta));
+}
+
 function updateHighlight() {
   if (selRing < 0) {
     hlMat.opacity = 0;
-    hlMarkerMat.opacity = 0;
     barDotEl.style.opacity = '0';
     return;
   }
   const p = profile[selRing];
-  const grip = Math.max(0.35, p.r * 1.1);
-  const markerSize = Math.max(0.45, p.r * 0.2);
+  const surfR = p.r * 1.012;
+  const patchR = Math.max(0.45, Math.min(2.2, p.r * 0.2));
+  const pos = new THREE.Vector3(
+    surfR * Math.cos(sculptTheta),
+    p.y,
+    surfR * Math.sin(sculptTheta)
+  );
+  const normal = surfaceNormalAtRing(selRing, sculptTheta);
+  pos.add(normal.clone().multiplyScalar(0.04));
 
-  hlRing.position.y = p.y;
-  hlRing.scale.set(grip, grip, grip);
-  hlMat.opacity = 0.88;
+  hlDisc.position.copy(pos);
+  hlDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+  hlDisc.scale.set(patchR, patchR, 1);
+  hlMat.opacity = 0.72;
 
-  hlMarker.position.set(p.r * 1.03, p.y, 0);
-  hlMarker.scale.set(markerSize, markerSize, markerSize);
-  hlMarkerMat.opacity = 0.95;
-
-  const t = selRing / (N - 1);
+  const t = selRing / Math.max(1, profile.length - 1);
   barDotEl.style.top = ((1 - t) * getVbarH()) + 'px';
   barDotEl.style.opacity = '1';
   barDotEl.classList.add('active');
@@ -581,12 +721,16 @@ const pctH = (v)=>((v-SIZE_MIN)/(H_MAX-SIZE_MIN)*100).toFixed(1)+'%';
 const pctW = (v)=>((v-SIZE_MIN)/(W_MAX-SIZE_MIN)*100).toFixed(1)+'%';
 
 const hSl=document.getElementById('heightSlider'), hIn=document.getElementById('heightInput');
+hSl.addEventListener('pointerdown', () => pushUndoState());
 hSl.addEventListener('input',  ()=>{ hIn.value=hSl.value; hSl.style.setProperty('--pct',pctH(+hSl.value)); applyHeightChange(+hSl.value); });
+hIn.addEventListener('focus', () => pushUndoState());
 hIn.addEventListener('change', ()=>applyHeightChange(+hIn.value));
 hIn.addEventListener('keydown',e=>{ if(e.key==='Enter')hIn.blur(); });
 
 const wSl=document.getElementById('widthSlider'),  wIn=document.getElementById('widthInput');
+wSl.addEventListener('pointerdown', () => pushUndoState());
 wSl.addEventListener('input',  ()=>{ wIn.value=wSl.value; wSl.style.setProperty('--pct',pctW(+wSl.value)); applyWidthChange(+wSl.value); });
+wIn.addEventListener('focus', () => pushUndoState());
 wIn.addEventListener('change', ()=>applyWidthChange(+wIn.value));
 wIn.addEventListener('keydown',e=>{ if(e.key==='Enter')wIn.blur(); });
 
@@ -594,6 +738,7 @@ wIn.addEventListener('keydown',e=>{ if(e.key==='Enter')wIn.blur(); });
 function loadPreset(type) {
   const preset = PRESETS[type];
   if (!preset) return;
+  clearHistoryStacks();
   widthCm = preset.widthCm;
   heightCm = preset.heightCm;
   PHT = heightCm;
@@ -603,18 +748,23 @@ function loadPreset(type) {
   syncUI();
   fitCamera();
 }
-document.getElementById('btnSmooth').addEventListener('click',()=>{
-  profile=profile.map((p,i,a)=>({...p,r:i===0||i===N-1?p.r:a[i-1].r*0.25+p.r*0.5+a[i+1].r*0.25}));
+document.getElementById('btnSmooth').addEventListener('click', () => {
+  pushUndoState();
+  profile = smoothProfile(profile, 1);
   updateClayFast();
+  updateActualSizeDisplay();
 });
+document.getElementById('btnUndo').addEventListener('click', () => undoProfile());
+document.getElementById('btnRedo').addEventListener('click', () => redoProfile());
 document.getElementById('btnVase').addEventListener('click', () => loadPreset('vase'));
 document.getElementById('btnPlate').addEventListener('click', () => loadPreset('plate'));
 document.getElementById('btnRiceBowl').addEventListener('click', () => loadPreset('ricebowl'));
-document.getElementById('btnReset').addEventListener('click', () => loadPreset('ricebowl'));
+document.getElementById('btnReset').addEventListener('click', () => loadPreset('cylinder'));
 
 resizeRenderer();
 fitCamera();
 syncUI();
+updateHistoryButtons();
 setStatus(READY_STATUS);
 
 // ── Animate (no rotation) ─────────────────────────────────────────────────────
@@ -623,5 +773,27 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
+// 개발자 도구(F12) 콘솔: exportClayProfile() → JSON 복사
+window.exportClayProfile = function exportClayProfile() {
+  const data = {
+    lastPreset,
+    widthCm,
+    heightCm,
+    profile: profile.map(p => ({
+      r: Math.round(p.r * 1000) / 1000,
+      y: Math.round(p.y * 1000) / 1000
+    }))
+  };
+  const json = JSON.stringify(data, null, 2);
+  console.log(json);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(
+      () => console.log('클립보드에 복사됨'),
+      () => console.log('복사 실패 — 위 JSON을 직접 복사하세요')
+    );
+  }
+  return data;
+};
 
 })();

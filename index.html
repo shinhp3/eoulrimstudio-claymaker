@@ -28,27 +28,39 @@
       <div class="size-stats">
         <div class="size-item">
           <span class="size-key">최대 가로</span>
-            <span class="size-value"><span id="actualWidth">11.0</span> cm</span>
+            <span class="size-value"><span id="actualWidth">10.0</span> cm</span>
         </div>
         <div class="size-item">
           <span class="size-key">실제 높이</span>
-            <span class="size-value"><span id="actualHeight">6.0</span> cm</span>
+            <span class="size-value"><span id="actualHeight">10.0</span> cm</span>
         </div>
         <div class="size-item">
           <span class="size-key">벽 두께</span>
           <span class="size-value">3 mm</span>
         </div>
       </div>
+      <div class="history-btns" aria-label="실행 취소">
+        <button type="button" class="btn btn-icon" id="btnUndo" disabled title="되돌아가기" aria-label="되돌아가기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
+        <button type="button" class="btn btn-icon" id="btnRedo" disabled title="되돌리기" aria-label="되돌리기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div id="heightPanel">
       <div class="panel-label">높이</div>
       <div id="vSliderWrap">
-        <input type="range" id="heightSlider" min="0.5" max="20" value="6" step="0.5">
+        <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.5">
         <div id="barDot"></div>
       </div>
       <div class="num-row">
-          <input class="num-input" type="number" id="heightInput" value="6" min="0.5" max="20" step="0.5">
+          <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.5">
         <span class="unit">cm</span>
       </div>
     </div>
@@ -56,9 +68,9 @@
     <div id="bottomDock">
       <div id="widthPanel">
         <span class="panel-label">너비</span>
-        <input type="range" id="widthSlider" min="0.5" max="20" value="11" step="0.5">
+        <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.5">
         <div class="num-row">
-          <input class="num-input" type="number" id="widthInput" value="11" min="0.5" max="20" step="0.5">
+          <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.5">
           <span class="unit">cm</span>
         </div>
       </div>
