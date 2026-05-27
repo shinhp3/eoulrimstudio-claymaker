@@ -2,11 +2,23 @@
 'use strict';
 
 const canvas = document.getElementById('c');
-const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
+
+function canvasRect() {
+  return canvas.getBoundingClientRect();
+}
+
+function resizeRenderer() {
+  const r = canvasRect();
+  const w = Math.max(1, r.width);
+  const h = Math.max(1, r.height);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
 
 // ── Scene (Toss TDS palette) ─────────────────────────────────────────────────
 const BG = 0xf9fafb;
-const CLAY = 0x1957c2;    // darker blue
+const CLAY = 0x12489e;    // clay blue (slightly deeper)
 const ACCENT = 0x3182f6;
 const WALL_THICKNESS_CM = 0.3; // fixed 3mm
 
@@ -19,19 +31,26 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
 scene.fog = new THREE.FogExp2(BG, 0.004);
 
-const camera = new THREE.PerspectiveCamera(40, W()/H(), 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-renderer.setSize(W(), H());
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.45;
+resizeRenderer();
 
-window.addEventListener('resize', ()=>{
-  camera.aspect = W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(), H());
-});
+window.addEventListener('resize', resizeRenderer);
+window.addEventListener('orientationchange', () => setTimeout(resizeRenderer, 150));
+
+const viewportEl = document.getElementById('viewport');
+if (viewportEl) {
+  new ResizeObserver(() => resizeRenderer()).observe(viewportEl);
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => {
+    viewportEl.addEventListener(ev, e => e.preventDefault(), { passive: false });
+  });
+}
 
 // ── Lights ────────────────────────────────────────────────────────────────────
 scene.add(new THREE.AmbientLight(0xffffff, 2.4));
@@ -293,7 +312,9 @@ fitCamera();
 const raycaster = new THREE.Raycaster();
 let mode = 'idle'; // 'sculpt' | 'orbit' | 'pinch'
 let selRing = -1, lastClientX = 0, orbitLast = {x:0,y:0};
-let pinchDist0 = 0, pinchRadius0 = 0;
+const pointers = new Map();
+let pinchStartDist = 0;
+let pinchStartRadius = 0;
 
 const statusEl = document.getElementById('status');
 const barDotEl = document.getElementById('barDot');
@@ -303,16 +324,99 @@ function getVbarH() {
   return wrap ? wrap.offsetHeight : 220;
 }
 
-function getTouchSpan(touches) {
-  if (touches.length < 2) return 0;
-  return Math.hypot(
-    touches[0].clientX - touches[1].clientX,
-    touches[0].clientY - touches[1].clientY
+function pointerSpan() {
+  const pts = [...pointers.values()];
+  if (pts.length < 2) return 0;
+  return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+}
+
+function startPinch() {
+  mode = 'pinch';
+  pinchStartDist = pointerSpan();
+  pinchStartRadius = orbit.radius;
+  if (pinchStartDist < 8) pinchStartDist = 8;
+  setStatus('확대/축소 중', true);
+}
+
+function applyPinch() {
+  const dist = pointerSpan();
+  if (pinchStartDist < 8 || dist < 8) return;
+  const scale = pinchStartDist / dist;
+  orbit.radius = Math.max(
+    orbit.zoomMin,
+    Math.min(orbit.zoomMax, pinchStartRadius * scale)
   );
+  updateCamera();
+}
+
+function zoomBy(factor) {
+  orbit.radius = Math.max(orbit.zoomMin, Math.min(orbit.zoomMax, orbit.radius * factor));
+  updateCamera();
+}
+
+function startSinglePointer(e) {
+  raycaster.setFromCamera(ndcFromClient(e.clientX, e.clientY), camera);
+  const hits = raycaster.intersectObjects(getClayPickTargets());
+  if (hits.length) {
+    mode = 'sculpt';
+    selRing = getRing(hits[0].point.y);
+    lastClientX = e.clientX;
+    setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
+    updateHighlight();
+  } else {
+    mode = 'orbit';
+    orbitLast = { x: e.clientX, y: e.clientY };
+    setStatus('회전 중', true);
+  }
+}
+
+function onPointerDown(e) {
+  if (e.target !== canvas) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+
+  if (pointers.size >= 2) {
+    e.preventDefault();
+    startPinch();
+    return;
+  }
+  if (pointers.size === 1) startSinglePointer(e);
+}
+
+function onPointerMove(e) {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pointers.size >= 2) {
+    e.preventDefault();
+    if (mode !== 'pinch') startPinch();
+    applyPinch();
+    return;
+  }
+
+  if (pointers.size === 1 && mode === 'sculpt') {
+    applySculptDrag(e.clientX, e.pointerType === 'touch');
+  } else if (pointers.size === 1 && mode === 'orbit') {
+    applyOrbitDrag(e.clientX, e.clientY);
+  }
+}
+
+function onPointerUp(e) {
+  pointers.delete(e.pointerId);
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+
+  if (pointers.size >= 2) {
+    startPinch();
+    return;
+  }
+  if (pointers.size === 0) endInteraction();
 }
 
 function ndcFromClient(clientX, clientY) {
-  return new THREE.Vector2((clientX / W()) * 2 - 1, -(clientY / H()) * 2 + 1);
+  const r = canvasRect();
+  const x = ((clientX - r.left) / r.width) * 2 - 1;
+  const y = -((clientY - r.top) / r.height) * 2 + 1;
+  return new THREE.Vector2(x, y);
 }
 
 function endInteraction() {
@@ -387,110 +491,18 @@ function updateHighlight() {
   barDotEl.classList.add('active');
 }
 
-// Unified pointer down: try sculpt → fallback to orbit
-canvas.addEventListener('mousedown', e=>{
-  if (e.button !== 0) return;
-  const ndc = new THREE.Vector2((e.clientX/W())*2-1, -(e.clientY/H())*2+1);
-  raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObjects(getClayPickTargets());
-  if (hits.length) {
-    mode = 'sculpt';
-    selRing = getRing(hits[0].point.y); lastClientX = e.clientX;
-    canvas.style.cursor = 'ew-resize';
-    setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
-    updateHighlight();
-  } else {
-    mode = 'orbit';
-    orbitLast = {x:e.clientX, y:e.clientY};
-    canvas.style.cursor = 'grab';
-    setStatus('회전 중', true);
-  }
-});
-
-canvas.addEventListener('mousemove', e=>{
-  if (mode === 'sculpt') applySculptDrag(e.clientX, false);
-  else if (mode === 'orbit') applyOrbitDrag(e.clientX, e.clientY);
-});
-
-canvas.addEventListener('mouseup', endInteraction);
-canvas.addEventListener('mouseleave', endInteraction);
-canvas.addEventListener('contextmenu', e=>e.preventDefault());
-canvas.addEventListener('wheel', e=>{
+canvas.addEventListener('pointerdown', onPointerDown);
+canvas.addEventListener('pointermove', onPointerMove);
+canvas.addEventListener('pointerup', onPointerUp);
+canvas.addEventListener('pointercancel', onPointerUp);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  orbit.radius = Math.max(orbit.zoomMin, Math.min(orbit.zoomMax, orbit.radius + e.deltaY*0.012));
-  updateCamera();
-}, {passive:false});
-
-// Touch (pinch zoom + sculpt/orbit)
-canvas.addEventListener('touchstart', e=>{
-  if (e.touches.length >= 2) {
-    e.preventDefault();
-    mode = 'pinch';
-    pinchDist0 = getTouchSpan(e.touches);
-    pinchRadius0 = orbit.radius;
-    setStatus('확대/축소 중', true);
-    return;
-  }
-  if (e.touches.length !== 1) return;
-  e.preventDefault();
-  const t = e.touches[0];
-  raycaster.setFromCamera(ndcFromClient(t.clientX, t.clientY), camera);
-  const hits = raycaster.intersectObjects(getClayPickTargets());
-  if (hits.length) {
-    mode = 'sculpt';
-    selRing = getRing(hits[0].point.y);
-    lastClientX = t.clientX;
-    setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
-    updateHighlight();
-  } else {
-    mode = 'orbit';
-    orbitLast = { x: t.clientX, y: t.clientY };
-    setStatus('회전 중', true);
-  }
+  zoomBy(1 + e.deltaY * 0.0012);
 }, { passive: false });
 
-canvas.addEventListener('touchmove', e=>{
-  if (e.touches.length >= 2) {
-    e.preventDefault();
-    const dist = getTouchSpan(e.touches);
-    if (mode !== 'pinch') {
-      mode = 'pinch';
-      pinchDist0 = dist;
-      pinchRadius0 = orbit.radius;
-      setStatus('확대/축소 중', true);
-      return;
-    }
-    if (pinchDist0 > 0 && dist > 0) {
-      orbit.radius = Math.max(
-        orbit.zoomMin,
-        Math.min(orbit.zoomMax, pinchRadius0 * (pinchDist0 / dist))
-      );
-      updateCamera();
-    }
-    return;
-  }
-  if (e.touches.length !== 1 || mode === 'pinch') return;
-  e.preventDefault();
-  const t = e.touches[0];
-  if (mode === 'sculpt') applySculptDrag(t.clientX, true);
-  else if (mode === 'orbit') applyOrbitDrag(t.clientX, t.clientY);
-}, { passive: false });
-
-canvas.addEventListener('touchend', e=>{
-  if (e.touches.length >= 2) {
-    mode = 'pinch';
-    pinchDist0 = getTouchSpan(e.touches);
-    pinchRadius0 = orbit.radius;
-    return;
-  }
-  if (e.touches.length === 1) {
-    endInteraction();
-    return;
-  }
-  if (e.touches.length === 0) endInteraction();
-}, { passive: false });
-
-canvas.addEventListener('touchcancel', endInteraction);
+document.getElementById('zoomIn')?.addEventListener('click', () => zoomBy(0.88));
+document.getElementById('zoomOut')?.addEventListener('click', () => zoomBy(1.14));
 
 // ── Height & Width controls ───────────────────────────────────────────────────
 function applyHeightChange(cm) {
@@ -540,7 +552,10 @@ document.getElementById('btnReset').addEventListener('click',()=>{
   loadPreset('cylinder');
 });
 
-syncUI(); setStatus(READY_STATUS);
+resizeRenderer();
+fitCamera();
+syncUI();
+setStatus(READY_STATUS);
 
 // ── Animate (no rotation) ─────────────────────────────────────────────────────
 function animate() {

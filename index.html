@@ -8,65 +8,77 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="hud">
-
-  <div class="brand">
-    <div class="brand-name">Clay Studio</div>
-    <div class="brand-sub">도자기를 만들어보세요</div>
-    <div class="brand-hint">조각: 드래그 · 회전: 빈 곳 · 확대/축소: 두 손가락</div>
+<div id="app">
+  <div id="viewport">
+    <canvas id="c"></canvas>
   </div>
 
-  <div id="profileWrap">
-    <div class="preview-label">실제 사이즈</div>
-    <div class="size-stats">
-      <div class="size-item">
-        <span class="size-key">최대 가로</span>
-        <span class="size-value"><span id="actualWidth">10.0</span> cm</span>
+  <div id="hud">
+    <div class="hud-top">
+      <div class="brand">
+        <div class="brand-name">Clay Studio</div>
+        <div class="brand-sub">도자기를 만들어보세요</div>
+        <div class="brand-hint">조각: 드래그 · 회전: 빈 곳 · 확대: 핀치 또는 +−</div>
       </div>
-      <div class="size-item">
-        <span class="size-key">실제 높이</span>
-        <span class="size-value"><span id="actualHeight">10.0</span> cm</span>
-      </div>
-      <div class="size-item">
-        <span class="size-key">벽 두께</span>
-        <span class="size-value">3 mm</span>
+
+      <div id="profileWrap">
+        <div class="preview-label">실제 사이즈</div>
+        <div class="size-stats">
+          <div class="size-item">
+            <span class="size-key">최대 가로</span>
+            <span class="size-value"><span id="actualWidth">10.0</span> cm</span>
+          </div>
+          <div class="size-item">
+            <span class="size-key">실제 높이</span>
+            <span class="size-value"><span id="actualHeight">10.0</span> cm</span>
+          </div>
+          <div class="size-item">
+            <span class="size-key">벽 두께</span>
+            <span class="size-value">3 mm</span>
+          </div>
+        </div>
       </div>
     </div>
+
+    <div id="dock">
+      <div id="heightPanel">
+        <div class="panel-label">높이</div>
+        <div id="vSliderWrap">
+          <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.5">
+          <div id="barDot"></div>
+        </div>
+        <div class="num-row">
+          <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.5">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+
+      <div id="bottomArea">
+        <div class="zoom-row">
+          <button type="button" class="zoom-btn" id="zoomOut" aria-label="축소">−</button>
+          <span class="zoom-label">확대 · 축소</span>
+          <button type="button" class="zoom-btn" id="zoomIn" aria-label="확대">+</button>
+        </div>
+        <div id="widthPanel">
+          <span class="panel-label">너비</span>
+          <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.5">
+          <div class="num-row">
+            <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.5">
+            <span class="unit">cm</span>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn" id="btnSmooth">부드럽게</button>
+          <button class="btn" id="btnVase">화병</button>
+          <button class="btn" id="btnBowl">그릇</button>
+          <button class="btn" id="btnCyl">원통</button>
+          <button class="btn btn-reset" id="btnReset">초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status">준비됨</div>
   </div>
-
-  <div id="heightPanel">
-    <div class="panel-label">높이</div>
-    <div id="vSliderWrap">
-      <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.5">
-      <div id="barDot"></div>
-    </div>
-    <div class="num-row">
-      <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.5">
-      <span class="unit">cm</span>
-    </div>
-  </div>
-
-  <div id="bottomArea">
-    <div id="widthPanel">
-      <span class="panel-label">너비</span>
-      <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.5">
-      <div class="num-row">
-        <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.5">
-        <span class="unit">cm</span>
-      </div>
-    </div>
-    <div class="btns">
-      <button class="btn" id="btnSmooth">부드럽게</button>
-      <button class="btn" id="btnVase">화병</button>
-      <button class="btn" id="btnBowl">그릇</button>
-      <button class="btn" id="btnCyl">원통</button>
-      <button class="btn btn-reset" id="btnReset">초기화</button>
-    </div>
-  </div>
-
-  <div id="status">준비됨</div>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
