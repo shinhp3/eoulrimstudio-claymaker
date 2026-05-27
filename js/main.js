@@ -66,8 +66,6 @@ fill.position.set(-25, 15, -10);
 scene.add(fill);
 
 // ── Scale: 1 Three.js unit = 1 cm ───────────────────────────────────────────
-let heightCm = 10, widthCm = 10;
-let PHT = heightCm;
 const N = 30, SEG = 80;
 const MIN_R = 0.05;
 const MAX_R = SIZE_MAX / 2;
@@ -84,46 +82,70 @@ function getActualSize() {
   return { height, diameter, maxR: Math.max(...rs) };
 }
 
-// ── Profile ───────────────────────────────────────────────────────────────────
-// Silhouette refs: classic vase (foot–body–shoulder–neck–rim), open ceramic bowl (base–curved wall–lip)
+// ── Presets (가로 cm × 높이 cm) ─────────────────────────────────────────────
+const PRESETS = {
+  vase:     { widthCm: 7.5, heightCm: 13 },
+  plate:    { widthCm: 19,  heightCm: 2.5 },
+  ricebowl: { widthCm: 11,  heightCm: 6 },
+};
+
+// Celadon vase: foot → lower belly → shoulder → slender neck → rim flare
 function vaseShape(t) {
-  if (t < 0.07) {
-    const u = t / 0.07;
-    return 0.44 + u * 0.1;
+  if (t < 0.06) {
+    const u = t / 0.06;
+    return 0.36 + u * 0.08;
   }
-  if (t < 0.14) {
-    const u = (t - 0.07) / 0.07;
-    return 0.54 + u * 0.2;
+  if (t < 0.12) {
+    const u = (t - 0.06) / 0.06;
+    return 0.44 + u * 0.16;
   }
-  if (t < 0.46) {
-    const u = (t - 0.14) / 0.32;
-    return 0.74 + 0.28 * Math.sin(u * Math.PI);
+  if (t < 0.4) {
+    const u = (t - 0.12) / 0.28;
+    return 0.6 + 0.44 * Math.sin(u * Math.PI * 0.92);
   }
   if (t < 0.7) {
-    const u = (t - 0.46) / 0.24;
-    return 1.02 - u * 0.7;
+    const u = (t - 0.4) / 0.3;
+    return 1.04 - u * 0.76;
   }
-  if (t < 0.88) {
-    const u = (t - 0.7) / 0.18;
-    return 0.32 + 0.03 * Math.sin(u * Math.PI);
+  if (t < 0.9) {
+    const u = (t - 0.7) / 0.2;
+    return 0.28 + 0.02 * Math.sin(u * Math.PI);
   }
-  const u = (t - 0.88) / 0.12;
-  return 0.3 + u * 0.14;
+  const u = (t - 0.9) / 0.1;
+  return 0.28 + u * 0.14;
 }
 
-function bowlShape(t) {
+// Shallow plate: flat well → foot ring → gentle slope → upturned rim
+function plateShape(t) {
   if (t < 0.1) {
     const u = t / 0.1;
-    return 0.3 + u * 0.12;
+    return 0.1 + u * 0.1;
   }
-  const u = (t - 0.1) / 0.9;
-  const curve = 1 - Math.pow(1 - u, 1.4);
-  let shape = 0.42 + 0.6 * curve;
-  if (t > 0.93) {
-    const lip = (t - 0.93) / 0.07;
-    shape += 0.04 * lip;
+  if (t < 0.2) {
+    const u = (t - 0.1) / 0.1;
+    return 0.2 + u * 0.5;
   }
-  return Math.min(1.06, shape);
+  if (t < 0.78) {
+    const u = (t - 0.2) / 0.58;
+    return 0.7 + 0.28 * (1 - Math.pow(1 - u, 0.9));
+  }
+  const u = (t - 0.78) / 0.22;
+  return 0.98 + 0.05 * u;
+}
+
+// Footed rice bowl: short foot → curved wall → wide rim
+function riceBowlShape(t) {
+  if (t < 0.17) {
+    const u = t / 0.17;
+    if (u < 0.32) return 0.18 + (u / 0.32) * 0.24;
+    return 0.42 + ((u - 0.32) / 0.68) * 0.06;
+  }
+  if (t < 0.88) {
+    const u = (t - 0.17) / 0.71;
+    return 0.48 + 0.52 * (1 - Math.pow(1 - u, 1.12));
+  }
+  const u = (t - 0.88) / 0.12;
+  return 1.0 + 0.025 * u;
 }
 
 function makeProfile(type) {
@@ -131,20 +153,20 @@ function makeProfile(type) {
   const out = [];
   for (let i = 0; i < N; i++) {
     const t = i/(N-1), y = -PHT/2 + t*PHT;
-    let r;
-    if (type === 'vase') {
-      r = baseR * vaseShape(t);
-    } else if (type === 'bowl') {
-      r = baseR * bowlShape(t);
-    } else {
-      r = baseR;
-    }
-    out.push({ r: Math.max(MIN_R, r), y });
+    let mul = 1;
+    if (type === 'vase') mul = vaseShape(t);
+    else if (type === 'plate') mul = plateShape(t);
+    else if (type === 'ricebowl') mul = riceBowlShape(t);
+    out.push({ r: Math.max(MIN_R, baseR * mul), y });
   }
   return out;
 }
 
-let profile = makeProfile('cylinder'), lastPreset = 'cylinder';
+let widthCm = PRESETS.ricebowl.widthCm;
+let heightCm = PRESETS.ricebowl.heightCm;
+let PHT = heightCm;
+let profile = makeProfile('ricebowl');
+let lastPreset = 'ricebowl';
 
 // ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
@@ -570,20 +592,25 @@ wIn.addEventListener('keydown',e=>{ if(e.key==='Enter')wIn.blur(); });
 
 // ── Buttons ───────────────────────────────────────────────────────────────────
 function loadPreset(type) {
-  lastPreset=type; profile=makeProfile(type);
-  createClay(); syncUI(); fitCamera();
+  const preset = PRESETS[type];
+  if (!preset) return;
+  widthCm = preset.widthCm;
+  heightCm = preset.heightCm;
+  PHT = heightCm;
+  lastPreset = type;
+  profile = makeProfile(type);
+  createClay();
+  syncUI();
+  fitCamera();
 }
 document.getElementById('btnSmooth').addEventListener('click',()=>{
   profile=profile.map((p,i,a)=>({...p,r:i===0||i===N-1?p.r:a[i-1].r*0.25+p.r*0.5+a[i+1].r*0.25}));
   updateClayFast();
 });
-document.getElementById('btnVase' ).addEventListener('click',()=>loadPreset('vase'));
-document.getElementById('btnBowl' ).addEventListener('click',()=>loadPreset('bowl'));
-document.getElementById('btnCyl'  ).addEventListener('click',()=>loadPreset('cylinder'));
-document.getElementById('btnReset').addEventListener('click',()=>{
-  heightCm=10; widthCm=10; PHT=10;
-  loadPreset('cylinder');
-});
+document.getElementById('btnVase').addEventListener('click', () => loadPreset('vase'));
+document.getElementById('btnPlate').addEventListener('click', () => loadPreset('plate'));
+document.getElementById('btnRiceBowl').addEventListener('click', () => loadPreset('ricebowl'));
+document.getElementById('btnReset').addEventListener('click', () => loadPreset('ricebowl'));
 
 resizeRenderer();
 fitCamera();

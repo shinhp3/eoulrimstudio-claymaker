@@ -24,6 +24,7 @@
   --radius-sm: 8px;
   --radius-pill: 999px;
   --mobile-dock-h: clamp(200px, 34dvh, 280px);
+  --dock-safe-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px));
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -402,6 +403,8 @@ canvas#c {
     height: 100dvh;
     height: 100%;
     overflow: hidden;
+    padding-bottom: var(--dock-safe-bottom);
+    box-sizing: border-box;
   }
 
   #viewport {
@@ -445,7 +448,7 @@ canvas#c {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 6px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: 6px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
     background: var(--surface);
     border-top: 1px solid var(--surface-border);
     pointer-events: auto;
