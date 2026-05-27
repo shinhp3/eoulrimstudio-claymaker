@@ -291,12 +291,54 @@ fitCamera();
 
 // ── Interaction ───────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
-let mode = 'idle'; // 'sculpt' | 'orbit'
+let mode = 'idle'; // 'sculpt' | 'orbit' | 'pinch'
 let selRing = -1, lastClientX = 0, orbitLast = {x:0,y:0};
+let pinchDist0 = 0, pinchRadius0 = 0;
 
 const statusEl = document.getElementById('status');
 const barDotEl = document.getElementById('barDot');
-const VBAR_H   = 220;
+
+function getVbarH() {
+  const wrap = document.getElementById('vSliderWrap');
+  return wrap ? wrap.offsetHeight : 220;
+}
+
+function getTouchSpan(touches) {
+  if (touches.length < 2) return 0;
+  return Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY
+  );
+}
+
+function ndcFromClient(clientX, clientY) {
+  return new THREE.Vector2((clientX / W()) * 2 - 1, -(clientY / H()) * 2 + 1);
+}
+
+function endInteraction() {
+  mode = 'idle';
+  selRing = -1;
+  canvas.style.cursor = 'crosshair';
+  hlMat.opacity = 0;
+  hlMarkerMat.opacity = 0;
+  barDotEl.style.opacity = '0';
+  barDotEl.classList.remove('active');
+  setStatus(READY_STATUS);
+}
+
+function applyOrbitDrag(clientX, clientY) {
+  orbit.theta -= (clientX - orbitLast.x) * 0.008;
+  orbit.phi = Math.max(0.05, Math.min(Math.PI - 0.05, orbit.phi - (clientY - orbitLast.y) * 0.008));
+  orbitLast = { x: clientX, y: clientY };
+  updateCamera();
+}
+
+function applySculptDrag(clientX, isTouch) {
+  const dx = clientX - lastClientX;
+  lastClientX = clientX;
+  const sign = isTouch ? -1 : 1;
+  applyEdit(selRing, dx * 0.02 * sign);
+}
 
 function setStatus(text, active = false) {
   statusEl.textContent = text;
@@ -340,7 +382,7 @@ function updateHighlight() {
   hlMarkerMat.opacity = 0.95;
 
   const t = selRing / (N - 1);
-  barDotEl.style.top = ((1 - t) * VBAR_H) + 'px';
+  barDotEl.style.top = ((1 - t) * getVbarH()) + 'px';
   barDotEl.style.opacity = '1';
   barDotEl.classList.add('active');
 }
@@ -366,28 +408,12 @@ canvas.addEventListener('mousedown', e=>{
 });
 
 canvas.addEventListener('mousemove', e=>{
-  if (mode === 'sculpt') {
-    const dx = e.clientX - lastClientX; lastClientX = e.clientX;
-    applyEdit(selRing, dx * 0.02);
-  } else if (mode === 'orbit') {
-    orbit.theta -= (e.clientX - orbitLast.x) * 0.008;
-    orbit.phi = Math.max(0.05, Math.min(Math.PI-0.05, orbit.phi - (e.clientY-orbitLast.y)*0.008));
-    orbitLast = {x:e.clientX, y:e.clientY};
-    updateCamera();
-  }
+  if (mode === 'sculpt') applySculptDrag(e.clientX, false);
+  else if (mode === 'orbit') applyOrbitDrag(e.clientX, e.clientY);
 });
 
-canvas.addEventListener('mouseup', ()=>{
-  mode='idle'; selRing=-1; canvas.style.cursor='crosshair';
-  hlMat.opacity=0; hlMarkerMat.opacity=0; barDotEl.style.opacity='0';
-  barDotEl.classList.remove('active');
-  setStatus(READY_STATUS);
-});
-canvas.addEventListener('mouseleave', ()=>{
-  mode='idle'; selRing=-1; hlMat.opacity=0; hlMarkerMat.opacity=0;
-  barDotEl.style.opacity='0'; barDotEl.classList.remove('active');
-  setStatus(READY_STATUS);
-});
+canvas.addEventListener('mouseup', endInteraction);
+canvas.addEventListener('mouseleave', endInteraction);
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
@@ -395,37 +421,76 @@ canvas.addEventListener('wheel', e=>{
   updateCamera();
 }, {passive:false});
 
-// Touch
+// Touch (pinch zoom + sculpt/orbit)
 canvas.addEventListener('touchstart', e=>{
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+    mode = 'pinch';
+    pinchDist0 = getTouchSpan(e.touches);
+    pinchRadius0 = orbit.radius;
+    setStatus('확대/축소 중', true);
+    return;
+  }
+  if (e.touches.length !== 1) return;
   e.preventDefault();
   const t = e.touches[0];
-  const ndc = new THREE.Vector2((t.clientX/W())*2-1, -(t.clientY/H())*2+1);
-  raycaster.setFromCamera(ndc, camera);
+  raycaster.setFromCamera(ndcFromClient(t.clientX, t.clientY), camera);
   const hits = raycaster.intersectObjects(getClayPickTargets());
   if (hits.length) {
-    mode='sculpt'; selRing=getRing(hits[0].point.y); lastClientX=t.clientX;
+    mode = 'sculpt';
+    selRing = getRing(hits[0].point.y);
+    lastClientX = t.clientX;
     setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
     updateHighlight();
   } else {
-    mode='orbit'; orbitLast={x:t.clientX,y:t.clientY};
+    mode = 'orbit';
+    orbitLast = { x: t.clientX, y: t.clientY };
     setStatus('회전 중', true);
   }
-},{passive:false});
+}, { passive: false });
+
 canvas.addEventListener('touchmove', e=>{
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+    const dist = getTouchSpan(e.touches);
+    if (mode !== 'pinch') {
+      mode = 'pinch';
+      pinchDist0 = dist;
+      pinchRadius0 = orbit.radius;
+      setStatus('확대/축소 중', true);
+      return;
+    }
+    if (pinchDist0 > 0 && dist > 0) {
+      orbit.radius = Math.max(
+        orbit.zoomMin,
+        Math.min(orbit.zoomMax, pinchRadius0 * (pinchDist0 / dist))
+      );
+      updateCamera();
+    }
+    return;
+  }
+  if (e.touches.length !== 1 || mode === 'pinch') return;
   e.preventDefault();
   const t = e.touches[0];
-  if (mode==='sculpt') { const dx=t.clientX-lastClientX; lastClientX=t.clientX; applyEdit(selRing,dx*0.02); }
-  else if (mode==='orbit') {
-    orbit.theta -= (t.clientX-orbitLast.x)*0.008;
-    orbit.phi = Math.max(0.05,Math.min(Math.PI-0.05, orbit.phi-(t.clientY-orbitLast.y)*0.008));
-    orbitLast={x:t.clientX,y:t.clientY}; updateCamera();
+  if (mode === 'sculpt') applySculptDrag(t.clientX, true);
+  else if (mode === 'orbit') applyOrbitDrag(t.clientX, t.clientY);
+}, { passive: false });
+
+canvas.addEventListener('touchend', e=>{
+  if (e.touches.length >= 2) {
+    mode = 'pinch';
+    pinchDist0 = getTouchSpan(e.touches);
+    pinchRadius0 = orbit.radius;
+    return;
   }
-},{passive:false});
-canvas.addEventListener('touchend', ()=>{
-  mode='idle'; selRing=-1; hlMat.opacity=0; hlMarkerMat.opacity=0;
-  barDotEl.style.opacity='0'; barDotEl.classList.remove('active');
-  setStatus(READY_STATUS);
-});
+  if (e.touches.length === 1) {
+    endInteraction();
+    return;
+  }
+  if (e.touches.length === 0) endInteraction();
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', endInteraction);
 
 // ── Height & Width controls ───────────────────────────────────────────────────
 function applyHeightChange(cm) {
