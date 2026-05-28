@@ -1,15 +1,20 @@
 (function(){
 'use strict';
 
-// 터치·좁은 화면·인앱 브라우저(카카오톡 등) → 모바일 도크 레이아웃
+// 데스크톱: 넓은 화면 + 마우스(정밀 포인터·hover). 그 외는 모바일 UI.
+const MQ_DESKTOP = '(min-width: 1025px) and (hover: hover) and (pointer: fine)';
+const desktopMq = window.matchMedia(MQ_DESKTOP);
+
 function updateLayoutMode() {
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
-  const noHover = window.matchMedia('(hover: none)').matches;
-  const touch = coarse || noHover || navigator.maxTouchPoints > 0;
-  const narrow = window.innerWidth <= 1024;
-  document.documentElement.classList.toggle('layout-touch', touch || narrow);
+  document.documentElement.classList.toggle('layout-desktop', desktopMq.matches);
 }
+
+function isMobileLayout() {
+  return !document.documentElement.classList.contains('layout-desktop');
+}
+
 updateLayoutMode();
+desktopMq.addEventListener('change', updateLayoutMode);
 window.addEventListener('resize', updateLayoutMode);
 window.addEventListener('orientationchange', updateLayoutMode);
 
@@ -475,10 +480,6 @@ const orbit = { theta:0, phi:1.1, radius:14, targetY:0, zoomMin:6, zoomMax:120 }
 function getObjectSpan() {
   const { height, diameter } = getActualSize();
   return Math.max(height, diameter, SIZE_MIN);
-}
-
-function isMobileLayout() {
-  return window.matchMedia('(max-width: 768px)').matches;
 }
 
 function fitCamera() {

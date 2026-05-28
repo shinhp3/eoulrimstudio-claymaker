@@ -367,18 +367,18 @@ canvas#c {
   order: 0;
 }
 
-html.layout-touch #presetBtns {
+html:not(.layout-desktop) #presetBtns {
   flex-wrap: nowrap;
   justify-content: stretch;
   gap: 6px;
 }
 
-html.layout-touch #viewport {
+html:not(.layout-desktop) #viewport {
   position: relative;
   isolation: isolate;
 }
 
-html.layout-touch .mobile-float #btnReset {
+html:not(.layout-desktop) .mobile-float #btnReset {
   position: absolute;
   top: max(8px, env(safe-area-inset-top, 0px));
   right: max(12px, env(safe-area-inset-right, 0px));
@@ -390,7 +390,7 @@ html.layout-touch .mobile-float #btnReset {
   box-shadow: var(--shadow);
 }
 
-html.layout-touch .mobile-float #btnSmooth {
+html:not(.layout-desktop) .mobile-float #btnSmooth {
   position: absolute;
   top: auto;
   right: auto;
@@ -404,7 +404,7 @@ html.layout-touch .mobile-float #btnSmooth {
   box-shadow: var(--shadow);
 }
 
-html.layout-touch .mobile-float .history-btns {
+html:not(.layout-desktop) .mobile-float .history-btns {
   position: absolute;
   top: auto;
   left: auto;
@@ -415,7 +415,7 @@ html.layout-touch .mobile-float .history-btns {
   gap: 6px;
 }
 
-html.layout-touch .mobile-float .btn-icon {
+html:not(.layout-desktop) .mobile-float .btn-icon {
   width: auto;
   min-width: unset;
   height: auto;
@@ -427,24 +427,24 @@ html.layout-touch .mobile-float .btn-icon {
   box-shadow: var(--shadow);
 }
 
-html.layout-touch .mobile-float .btn-icon svg {
+html:not(.layout-desktop) .mobile-float .btn-icon svg {
   width: 22px;
   height: 22px;
 }
 
-html.layout-touch .studio-dock {
+html:not(.layout-desktop) .studio-dock {
   display: none !important;
 }
 
-html.layout-touch .dock-presets .dock-block__label {
+html:not(.layout-desktop) .dock-presets .dock-block__label {
   display: none;
 }
 
-html.layout-touch .dock-presets {
+html:not(.layout-desktop) .dock-presets {
   width: 100%;
 }
 
-html.layout-touch #presetBtns .btn {
+html:not(.layout-desktop) #presetBtns .btn {
   min-height: 40px;
   padding: 10px 6px;
   flex: 1 1 0;
@@ -616,7 +616,7 @@ html.layout-touch #presetBtns .btn {
 
 /* ── Desktop (넓은 화면 + 마우스) ── */
 @media (min-width: 1025px) {
-  html:not(.layout-touch) {
+  html.layout-desktop {
     --fs-ui: 15px;
     --fs-label: 14px;
     --fs-btn: 15px;
@@ -625,20 +625,20 @@ html.layout-touch #presetBtns .btn {
     --fs-size-val: 14px;
   }
 
-  html:not(.layout-touch) #app {
+  html.layout-desktop #app {
     display: block;
     padding-bottom: 0;
     height: 100%;
   }
 
-  html:not(.layout-touch) #viewport {
+  html.layout-desktop #viewport {
     position: fixed;
     inset: 0;
     display: block;
     flex: none;
   }
 
-  html:not(.layout-touch) #hud {
+  html.layout-desktop #hud {
     position: fixed;
     inset: 0;
     max-height: none;
@@ -650,7 +650,7 @@ html.layout-touch #presetBtns .btn {
     pointer-events: none;
   }
 
-  html:not(.layout-touch) .brand {
+  html.layout-desktop .brand {
     display: block;
     position: absolute;
     top: 20px;
@@ -660,7 +660,7 @@ html.layout-touch #presetBtns .btn {
     pointer-events: auto;
   }
 
-  html:not(.layout-touch) #profileWrap {
+  html.layout-desktop #profileWrap {
     top: 20px;
     right: 20px;
     left: auto;
@@ -670,20 +670,20 @@ html.layout-touch #presetBtns .btn {
     pointer-events: auto;
   }
 
-  html:not(.layout-touch) #profileWrap .size-stats {
+  html.layout-desktop #profileWrap .size-stats {
     align-items: stretch;
     gap: 8px;
   }
 
-  html:not(.layout-touch) .ui-desktop-only {
+  html.layout-desktop .ui-desktop-only {
     display: inline-block !important;
   }
 
-  html:not(.layout-touch) .ui-mobile-only {
+  html.layout-desktop .ui-mobile-only {
     display: none !important;
   }
 
-  html:not(.layout-touch) #bottomDock {
+  html.layout-desktop #bottomDock {
     position: absolute;
     bottom: 20px;
     left: 50%;
@@ -703,7 +703,7 @@ html.layout-touch #presetBtns .btn {
     pointer-events: all;
   }
 
-  html:not(.layout-touch) .studio-dock {
+  html.layout-desktop .studio-dock {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -715,14 +715,14 @@ html.layout-touch #presetBtns .btn {
     overflow: visible;
   }
 
-  html:not(.layout-touch) .studio-dock__row--tools {
+  html.layout-desktop .studio-dock__row--tools {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 0;
   }
 
-  html:not(.layout-touch) .dock-block {
+  html.layout-desktop .dock-block {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -732,12 +732,12 @@ html.layout-touch #presetBtns .btn {
     border-left: 1px solid var(--grey-100);
   }
 
-  html:not(.layout-touch) .studio-dock .dock-block:first-child {
+  html.layout-desktop .studio-dock .dock-block:first-child {
     border-left: none;
     padding-left: 8px;
   }
 
-  html:not(.layout-touch) .dock-block__label {
+  html.layout-desktop .dock-block__label {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -747,22 +747,22 @@ html.layout-touch #presetBtns .btn {
     flex-shrink: 0;
   }
 
-  html:not(.layout-touch) .dock-block__body {
+  html.layout-desktop .dock-block__body {
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  html:not(.layout-touch) .dock-block__body--actions {
+  html.layout-desktop .dock-block__body--actions {
     flex-wrap: nowrap;
   }
 
-  html:not(.layout-touch) .studio-dock .history-btns {
+  html.layout-desktop .studio-dock .history-btns {
     display: flex;
     gap: 6px;
   }
 
-  html:not(.layout-touch) .studio-dock .btn-icon {
+  html.layout-desktop .studio-dock .btn-icon {
     width: 40px;
     min-width: 40px;
     height: 40px;
@@ -771,12 +771,12 @@ html.layout-touch #presetBtns .btn {
     background: var(--grey-50);
   }
 
-  html:not(.layout-touch) .studio-dock .btn-icon svg {
+  html.layout-desktop .studio-dock .btn-icon svg {
     width: 22px;
     height: 22px;
   }
 
-  html:not(.layout-touch) .dock-presets {
+  html.layout-desktop .dock-presets {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -791,12 +791,12 @@ html.layout-touch #presetBtns .btn {
     box-shadow: none;
   }
 
-  html:not(.layout-touch) .dock-presets .dock-block__label {
+  html.layout-desktop .dock-presets .dock-block__label {
     display: block;
     flex-shrink: 0;
   }
 
-  html:not(.layout-touch) .dock-presets #presetBtns {
+  html.layout-desktop .dock-presets #presetBtns {
     justify-content: flex-start;
     gap: 8px;
     flex-wrap: nowrap;
@@ -804,7 +804,7 @@ html.layout-touch #presetBtns .btn {
     min-width: 0;
   }
 
-  html:not(.layout-touch) .dock-presets .btn {
+  html.layout-desktop .dock-presets .btn {
     padding: 9px 16px;
     min-height: auto;
     flex: 0 1 auto;
@@ -812,7 +812,7 @@ html.layout-touch #presetBtns .btn {
     white-space: nowrap;
   }
 
-  html:not(.layout-touch) #slidersRow {
+  html.layout-desktop #slidersRow {
     display: block;
     position: static;
     width: auto;
@@ -820,7 +820,7 @@ html.layout-touch #presetBtns .btn {
     order: 0;
   }
 
-  html:not(.layout-touch) #heightPanel {
+  html.layout-desktop #heightPanel {
     position: absolute;
     right: 20px;
     top: 50%;
@@ -836,22 +836,22 @@ html.layout-touch #presetBtns .btn {
     width: auto;
   }
 
-  html:not(.layout-touch) #vSliderWrap {
+  html.layout-desktop #vSliderWrap {
     width: 36px;
     height: 220px;
     flex: none;
   }
 
-  html:not(.layout-touch) #heightSlider {
+  html.layout-desktop #heightSlider {
     transform: rotate(-90deg);
     width: 220px;
   }
 
-  html:not(.layout-touch) #barDot {
+  html.layout-desktop #barDot {
     display: block;
   }
 
-  html:not(.layout-touch) #slidersRow #widthPanel {
+  html.layout-desktop #slidersRow #widthPanel {
     position: absolute;
     bottom: calc(20px + 72px);
     left: 50%;
@@ -866,19 +866,19 @@ html.layout-touch #presetBtns .btn {
     z-index: 2;
   }
 
-  html:not(.layout-touch) #widthSlider {
+  html.layout-desktop #widthSlider {
     width: min(280px, 50vw);
     min-width: 120px;
     flex: 1;
   }
 
-  html:not(.layout-touch) .num-input {
+  html.layout-desktop .num-input {
     width: 52px;
     min-height: auto;
     padding: 7px 4px;
   }
 
-  html:not(.layout-touch) #status {
+  html.layout-desktop #status {
     display: block;
     position: absolute;
     bottom: 20px;
@@ -900,21 +900,21 @@ html.layout-touch #presetBtns .btn {
     --mobile-dock-h: clamp(200px, 42dvh, 280px);
   }
 
-  html.layout-touch #presetBtns .btn {
+  html:not(.layout-desktop) #presetBtns .btn {
     padding: 10px 4px;
     font-size: 13px;
   }
 }
 
-/* 인앱 브라우저: viewport가 넓게 잡혀도 터치면 슬라이더 2줄 유지 */
-html.layout-touch #slidersRow {
+/* 모바일·터치·인앱: 슬라이더 2줄 유지 (데스크톱 클래스 없을 때) */
+html:not(.layout-desktop) #slidersRow {
   display: flex;
   flex-direction: column;
   align-items: stretch;
 }
 
-html.layout-touch #heightPanel,
-html.layout-touch #widthPanel {
+html:not(.layout-desktop) #heightPanel,
+html:not(.layout-desktop) #widthPanel {
   width: 100%;
   flex: 0 0 auto;
   flex-direction: row;
