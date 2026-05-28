@@ -186,6 +186,20 @@ function smoothProfile(pts, passes = 1) {
   return out;
 }
 
+const REFINE_STRENGTH = 1.5;
+
+/** 다듬기: 1회 스무딩 방향으로 strength배만큼 반영 (끝단 고정) */
+function refineProfile(pts, strength = REFINE_STRENGTH) {
+  const smoothed = smoothProfileOnce(pts);
+  const last = pts.length - 1;
+  return pts.map((p, i) => ({
+    y: p.y,
+    r: i === 0 || i === last
+      ? p.r
+      : Math.max(MIN_R, Math.min(MAX_R, p.r + strength * (smoothed[i].r - p.r)))
+  }));
+}
+
 function makeProfile(type) {
   if (type === 'plate') return cloneProfile(PLATE_PROFILE_BAKED);
   if (type === 'ricebowl') return cloneProfile(RICEBOWL_PROFILE_BAKED);
@@ -235,10 +249,16 @@ function applyHistoryState(snap) {
 }
 
 function updateHistoryButtons() {
-  const undoBtn = document.getElementById('btnUndo');
-  const redoBtn = document.getElementById('btnRedo');
-  if (undoBtn) undoBtn.disabled = undoStack.length === 0;
-  if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+  const undoDisabled = undoStack.length === 0;
+  const redoDisabled = redoStack.length === 0;
+  ['btnUndo', 'btnUndoM'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = undoDisabled;
+  });
+  ['btnRedo', 'btnRedoM'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = redoDisabled;
+  });
 }
 
 function pushUndoState() {
@@ -494,7 +514,7 @@ fitCamera();
 // ── Interaction ───────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 let mode = 'idle'; // 'sculpt' | 'orbit' | 'pinch'
-let selRing = -1, lastClientX = 0, orbitLast = {x:0,y:0};
+let selRing = -1, lastClientX = 0, lastClientY = 0, orbitLast = {x:0,y:0};
 const pointers = new Map();
 let pinchStartDist = 0;
 let pinchStartRadius = 0;
@@ -547,6 +567,7 @@ function startSinglePointer(e) {
     selRing = getRing(pt.y);
     sculptTheta = Math.atan2(pt.z, pt.x);
     lastClientX = e.clientX;
+    lastClientY = e.clientY;
     setStatus(`조각 중 · ${selRing + 1}번째 줄`, true);
     updateHighlight();
   } else {
@@ -581,7 +602,7 @@ function onPointerMove(e) {
   }
 
   if (pointers.size === 1 && mode === 'sculpt') {
-    applySculptDrag(e.clientX);
+    applySculptDrag(e.clientX, e.clientY);
   } else if (pointers.size === 1 && mode === 'orbit') {
     applyOrbitDrag(e.clientX, e.clientY);
   }
@@ -622,10 +643,43 @@ function applyOrbitDrag(clientX, clientY) {
   updateCamera();
 }
 
-function applySculptDrag(clientX) {
+function worldToClient(vec3) {
+  const p = vec3.clone().project(camera);
+  const r = canvasRect();
+  return {
+    x: (p.x * 0.5 + 0.5) * r.width + r.left,
+    y: (-p.y * 0.5 + 0.5) * r.height + r.top
+  };
+}
+
+/** 화면 드래그를 해당 지점의 반경(바깥) 방향으로 투영 — 좌/우 면 동일하게 동작 */
+function applySculptDrag(clientX, clientY) {
   const dx = clientX - lastClientX;
+  const dy = clientY - lastClientY;
   lastClientX = clientX;
-  applyEdit(selRing, dx * 0.02);
+  lastClientY = clientY;
+
+  const pr = profile[selRing];
+  const y = pr.y;
+  const r0 = pr.r;
+  const eps = 0.08;
+  const c = Math.cos(sculptTheta);
+  const s = Math.sin(sculptTheta);
+  const v0 = new THREE.Vector3(r0 * c, y, r0 * s);
+  const v1 = new THREE.Vector3((r0 + eps) * c, y, (r0 + eps) * s);
+  const a = worldToClient(v0);
+  const b = worldToClient(v1);
+  let ux = b.x - a.x;
+  let uy = b.y - a.y;
+  const ulen = Math.hypot(ux, uy);
+  if (ulen < 1e-4) {
+    applyEdit(selRing, dx * 0.02);
+    return;
+  }
+  ux /= ulen;
+  uy /= ulen;
+  const dragAlong = dx * ux + dy * uy;
+  applyEdit(selRing, dragAlong * 0.02);
 }
 
 function setStatus(text, active = false) {
@@ -754,19 +808,25 @@ function loadPreset(type) {
   syncUI();
   fitCamera();
 }
-document.getElementById('btnSmooth').addEventListener('click', () => {
+function onSmoothClick() {
   pushUndoState();
-  profile = smoothProfile(profile, 1);
+  profile = refineProfile(profile, REFINE_STRENGTH);
   updateClayFast();
   updateActualSizeDisplay();
-});
+}
+document.getElementById('btnSmooth').addEventListener('click', onSmoothClick);
+document.getElementById('btnSmoothDock').addEventListener('click', onSmoothClick);
 document.getElementById('btnUndo').addEventListener('click', () => undoProfile());
 document.getElementById('btnRedo').addEventListener('click', () => redoProfile());
+document.getElementById('btnUndoM').addEventListener('click', () => undoProfile());
+document.getElementById('btnRedoM').addEventListener('click', () => redoProfile());
 document.getElementById('btnVase').addEventListener('click', () => loadPreset('vase'));
 document.getElementById('btnPlate').addEventListener('click', () => loadPreset('plate'));
 document.getElementById('btnRiceBowl').addEventListener('click', () => loadPreset('ricebowl'));
 const resetDialog = document.getElementById('resetDialog');
-document.getElementById('btnReset').addEventListener('click', () => resetDialog.showModal());
+function openResetDialog() { resetDialog.showModal(); }
+document.getElementById('btnReset').addEventListener('click', openResetDialog);
+document.getElementById('btnResetDesk').addEventListener('click', openResetDialog);
 document.getElementById('resetDialogCancel').addEventListener('click', () => resetDialog.close());
 document.getElementById('resetDialogConfirm').addEventListener('click', () => {
   resetDialog.close();

@@ -37,18 +37,24 @@
   --fs-size-val: 14px;
 }
 
-#viewport #btnReset,
-#viewport .history-btns,
+.ui-desktop-only {
+  display: none !important;
+}
+
+.mobile-float {
+  display: contents;
+}
+
 #viewport #profileWrap {
   position: absolute;
   z-index: 3;
   pointer-events: none;
 }
 
-#viewport #btnReset,
-#viewport .history-btns,
 #viewport #profileWrap,
-#viewport .btn-icon {
+.mobile-float .btn,
+.mobile-float .history-btns,
+.mobile-float .btn-icon {
   pointer-events: auto;
 }
 
@@ -354,31 +360,62 @@ canvas#c {
 
 #presetBtns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
   order: 0;
 }
 
-#viewport #btnReset {
+html.layout-touch #presetBtns {
+  flex-wrap: nowrap;
+  justify-content: stretch;
+  gap: 6px;
+}
+
+html.layout-touch #viewport {
+  position: relative;
+  isolation: isolate;
+}
+
+html.layout-touch .mobile-float #btnReset {
+  position: absolute;
   top: max(8px, env(safe-area-inset-top, 0px));
   right: max(12px, env(safe-area-inset-right, 0px));
   left: auto;
   bottom: auto;
+  z-index: 4;
   padding: 8px 14px;
   font-size: var(--fs-btn);
   box-shadow: var(--shadow);
 }
 
-#viewport .history-btns {
+html.layout-touch .mobile-float #btnSmooth {
+  position: absolute;
   top: auto;
-  left: auto;
-  bottom: max(10px, env(safe-area-inset-bottom, 0px));
-  right: max(12px, env(safe-area-inset-right, 0px));
+  right: auto;
+  bottom: 10px;
+  left: max(12px, env(safe-area-inset-left, 0px));
+  z-index: 4;
+  padding: 8px 14px;
+  font-size: var(--fs-btn);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
 }
 
-#viewport .btn-icon {
+html.layout-touch .mobile-float .history-btns {
+  position: absolute;
+  top: auto;
+  left: auto;
+  bottom: 10px;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+}
+
+html.layout-touch .mobile-float .btn-icon {
   width: auto;
   min-width: unset;
   height: auto;
@@ -390,16 +427,28 @@ canvas#c {
   box-shadow: var(--shadow);
 }
 
-#viewport .btn-icon svg {
+html.layout-touch .mobile-float .btn-icon svg {
   width: 22px;
   height: 22px;
 }
 
-#presetBtns .btn {
+html.layout-touch .studio-dock {
+  display: none !important;
+}
+
+html.layout-touch .dock-presets .dock-block__label {
+  display: none;
+}
+
+html.layout-touch .dock-presets {
+  width: 100%;
+}
+
+html.layout-touch #presetBtns .btn {
   min-height: 40px;
   padding: 10px 6px;
-  flex: 1 1 calc(25% - 4px);
-  min-width: calc(25% - 4px);
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 #status {
@@ -613,11 +662,12 @@ canvas#c {
 
   html:not(.layout-touch) #profileWrap {
     top: 20px;
-    right: 110px;
+    right: 20px;
     left: auto;
     align-items: center;
     padding: 14px 16px;
     max-width: none;
+    pointer-events: auto;
   }
 
   html:not(.layout-touch) #profileWrap .size-stats {
@@ -625,31 +675,12 @@ canvas#c {
     gap: 8px;
   }
 
-  html:not(.layout-touch) #viewport #btnReset {
-    top: 20px;
-    right: 20px;
-    padding: 8px 14px;
+  html:not(.layout-touch) .ui-desktop-only {
+    display: inline-block !important;
   }
 
-  html:not(.layout-touch) #viewport .history-btns {
-    top: calc(20px + 44px);
-    right: 20px;
-    bottom: auto;
-    left: auto;
-  }
-
-  html:not(.layout-touch) #viewport .btn-icon {
-    width: 52px;
-    min-width: 52px;
-    height: 52px;
-    min-height: 52px;
-    padding: 0;
-    background: var(--surface);
-  }
-
-  html:not(.layout-touch) #viewport .btn-icon svg {
-    width: 28px;
-    height: 28px;
+  html:not(.layout-touch) .ui-mobile-only {
+    display: none !important;
   }
 
   html:not(.layout-touch) #bottomDock {
@@ -657,9 +688,14 @@ canvas#c {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: auto;
-    max-width: calc(100vw - 40px);
-    padding: 18px 22px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: min(720px, calc(100vw - 48px));
+    padding: 12px 8px;
     background: var(--surface);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius);
@@ -667,11 +703,113 @@ canvas#c {
     pointer-events: all;
   }
 
-  html:not(.layout-touch) #presetBtns .btn {
+  html:not(.layout-touch) .studio-dock {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex: 0 1 auto;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  html:not(.layout-touch) .studio-dock__row--tools {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+  }
+
+  html:not(.layout-touch) .dock-block {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    min-width: 0;
+    border-left: 1px solid var(--grey-100);
+  }
+
+  html:not(.layout-touch) .studio-dock .dock-block:first-child {
+    border-left: none;
+    padding-left: 8px;
+  }
+
+  html:not(.layout-touch) .dock-block__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  html:not(.layout-touch) .dock-block__body {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  html:not(.layout-touch) .dock-block__body--actions {
+    flex-wrap: nowrap;
+  }
+
+  html:not(.layout-touch) .studio-dock .history-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  html:not(.layout-touch) .studio-dock .btn-icon {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    background: var(--grey-50);
+  }
+
+  html:not(.layout-touch) .studio-dock .btn-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  html:not(.layout-touch) .dock-presets {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 12px 0 16px;
+    margin: 0;
+    border-left: 1px solid var(--grey-100);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  html:not(.layout-touch) .dock-presets .dock-block__label {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  html:not(.layout-touch) .dock-presets #presetBtns {
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  html:not(.layout-touch) .dock-presets .btn {
+    padding: 9px 16px;
     min-height: auto;
-    padding: 10px 18px;
     flex: 0 1 auto;
     min-width: auto;
+    white-space: nowrap;
   }
 
   html:not(.layout-touch) #slidersRow {
@@ -715,7 +853,7 @@ canvas#c {
 
   html:not(.layout-touch) #slidersRow #widthPanel {
     position: absolute;
-    bottom: calc(20px + 118px);
+    bottom: calc(20px + 72px);
     left: 50%;
     transform: translateX(-50%);
     width: min(480px, calc(100vw - 48px));
@@ -762,9 +900,9 @@ canvas#c {
     --mobile-dock-h: clamp(200px, 42dvh, 280px);
   }
 
-  #presetBtns .btn {
-    flex: 1 1 calc(50% - 4px);
-    min-width: calc(50% - 4px);
+  html.layout-touch #presetBtns .btn {
+    padding: 10px 4px;
+    font-size: 13px;
   }
 }
 

@@ -26,19 +26,21 @@
       </div>
     </div>
 
-    <button type="button" class="btn btn-reset" id="btnReset">초기화</button>
-
-    <div class="history-btns" aria-label="실행 취소">
-      <button type="button" class="btn btn-icon" id="btnUndo" disabled title="되돌아가기" aria-label="되돌아가기">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
-        </svg>
-      </button>
-      <button type="button" class="btn btn-icon" id="btnRedo" disabled title="되돌리기" aria-label="되돌리기">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
-        </svg>
-      </button>
+    <div class="mobile-float ui-mobile-only">
+      <button type="button" class="btn btn-reset" id="btnReset">초기화</button>
+      <div class="history-btns" aria-label="실행 취소">
+        <button type="button" class="btn btn-icon" id="btnUndoM" disabled title="되돌아가기" aria-label="되돌아가기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
+        <button type="button" class="btn btn-icon" id="btnRedoM" disabled title="되돌리기" aria-label="되돌리기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+          </svg>
+        </button>
+      </div>
+      <button type="button" class="btn" id="btnSmooth">다듬기</button>
     </div>
   </div>
 
@@ -50,11 +52,42 @@
     </div>
 
     <div id="bottomDock">
-      <div id="presetBtns" class="btns">
-        <button class="btn" id="btnSmooth">부드럽게</button>
-        <button class="btn" id="btnVase">화병</button>
-        <button class="btn" id="btnPlate">접시</button>
-        <button class="btn" id="btnRiceBowl">밥그릇</button>
+      <div class="studio-dock ui-desktop-only">
+        <div class="studio-dock__row studio-dock__row--tools">
+          <div class="dock-block">
+            <span class="dock-block__label">기록</span>
+            <div class="dock-block__body">
+              <div class="history-btns" aria-label="실행 취소">
+                <button type="button" class="btn btn-icon" id="btnUndo" disabled title="되돌아가기" aria-label="되돌아가기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                  </svg>
+                </button>
+                <button type="button" class="btn btn-icon" id="btnRedo" disabled title="되돌리기" aria-label="되돌리기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="dock-block">
+            <span class="dock-block__label">편집</span>
+            <div class="dock-block__body dock-block__body--actions">
+              <button type="button" class="btn" id="btnSmoothDock">다듬기</button>
+              <button type="button" class="btn btn-reset" id="btnResetDesk">초기화</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dock-presets">
+        <span class="dock-block__label ui-desktop-only">프리셋</span>
+        <div id="presetBtns" class="btns">
+          <button type="button" class="btn" id="btnVase">화병</button>
+          <button type="button" class="btn" id="btnPlate">접시</button>
+          <button type="button" class="btn" id="btnRiceBowl">밥그릇</button>
+        </div>
       </div>
     </div>
 
