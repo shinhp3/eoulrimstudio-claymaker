@@ -23,8 +23,21 @@
   --radius: 12px;
   --radius-sm: 8px;
   --radius-pill: 999px;
-  --mobile-dock-h: clamp(200px, 34dvh, 280px);
-  --dock-safe-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+  --mobile-dock-h: clamp(210px, 38dvh, 300px);
+  --dock-safe-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+#viewport .history-btns,
+#viewport #profileWrap {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+
+#viewport .history-btns,
+#viewport #profileWrap,
+#viewport .btn-icon {
+  pointer-events: auto;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,10 +61,6 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 0;
-}
-
-.viewport-title {
-  display: none;
 }
 
 canvas#c {
@@ -110,11 +119,12 @@ canvas#c {
   line-height: 1.55;
 }
 
-/* ── Size panel ── */
+/* ── Size panel (desktop: viewport overlay 우상단) ── */
 #profileWrap {
-  position: absolute;
   top: 20px;
-  right: 110px;
+  right: 20px;
+  left: auto;
+  bottom: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -124,7 +134,6 @@ canvas#c {
   border: 1px solid var(--surface-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  pointer-events: auto;
 }
 
 .preview-label {
@@ -280,6 +289,11 @@ canvas#c {
   color: var(--text-muted);
 }
 
+/* ── Sliders row (mobile) / width slot ── */
+#slidersRow {
+  display: none;
+}
+
 /* ── Bottom dock (desktop) ── */
 #bottomDock {
   position: absolute;
@@ -297,6 +311,18 @@ canvas#c {
   box-shadow: var(--shadow);
   pointer-events: all;
   max-width: calc(100vw - 40px);
+}
+
+#presetBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+#bottomDock > .btn-reset {
+  width: 100%;
 }
 
 #widthPanel {
@@ -340,14 +366,9 @@ canvas#c {
   background: var(--white);
 }
 
-#profileWrap .history-btns {
+.history-btns {
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  width: 100%;
-  padding-top: 10px;
-  margin-top: 4px;
-  border-top: 1px solid var(--grey-100);
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -456,22 +477,51 @@ canvas#c {
     background: var(--bg);
   }
 
-  .viewport-title {
-    display: block;
-    position: absolute;
-    top: max(8px, env(safe-area-inset-top));
-    left: max(12px, env(safe-area-inset-left));
-    z-index: 2;
-    pointer-events: none;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.92);
+  #profileWrap {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    right: auto;
+    bottom: auto;
+    align-items: flex-start;
+    padding: 10px 12px;
+    max-width: min(200px, calc(100vw - 100px));
+  }
+
+  #profileWrap .size-stats {
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  #profileWrap .size-item {
+    width: 100%;
+  }
+
+  #viewport .history-btns {
+    top: auto;
+    left: auto;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+    border: none;
+  }
+
+  #viewport .btn-icon {
+    width: auto;
+    min-width: unset;
+    height: auto;
+    min-height: unset;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.94);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow);
   }
 
-  .viewport-title .brand-name {
-    font-size: 14px;
+  #viewport .btn-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .brand {
@@ -480,114 +530,58 @@ canvas#c {
 
   #hud {
     position: relative;
-    flex: 0 0 var(--mobile-dock-h);
+    flex: 0 0 auto;
+    max-height: min(var(--mobile-dock-h), 42dvh);
     order: 2;
     inset: auto;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 6px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+    gap: 5px;
+    padding: 6px max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
     background: var(--surface);
     border-top: 1px solid var(--surface-border);
     pointer-events: auto;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 -4px 16px rgba(2, 9, 19, 0.06);
-  }
-
-  #profileWrap {
-    position: static;
-    order: 1;
-    flex: 0 0 auto;
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px 10px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    box-shadow: none;
-    border: 1px solid var(--grey-100);
-    background: var(--grey-50);
-  }
-
-  .preview-label {
-    width: 100%;
-    font-size: 11px;
-  }
-
-  .size-stats {
-    width: 100%;
-    min-width: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px 14px;
-  }
-
-  .size-item {
-    gap: 6px;
-  }
-
-  .size-key { font-size: 11px; }
-  .size-value { font-size: 12px; }
-
-  #profileWrap .history-btns {
-    width: 100%;
-    justify-content: center;
-    padding-top: 8px;
-    margin-top: 6px;
-    border-top: 1px solid var(--grey-200);
-  }
-
-  #profileWrap .btn-icon {
-    width: 48px;
-    min-width: 48px;
-    height: 48px;
-    min-height: 48px;
-  }
-
-  #profileWrap .btn-icon svg {
-    width: 26px;
-    height: 26px;
   }
 
   #bottomDock {
     display: contents;
   }
 
-  #bottomDock .btns {
-    order: 2;
+  #presetBtns {
+    order: 0;
     width: 100%;
     gap: 5px;
+    padding: 0;
   }
 
-  #bottomDock #widthPanel {
-    order: 4;
+  :root {
+    --mobile-dock-h: clamp(168px, 30dvh, 240px);
   }
 
-  #heightPanel {
-    position: static;
-    order: 3;
-    transform: none;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    padding: 6px 8px;
-    gap: 8px;
-    border-radius: var(--radius-sm);
-    box-shadow: none;
-    border: 1px solid var(--grey-100);
-    background: var(--grey-50);
-  }
-
-  #bottomDock #widthPanel {
-    position: static;
+  #slidersRow {
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 6px;
+    order: 1;
     width: 100%;
+    flex: 0 0 auto;
+  }
+
+  #heightPanel,
+  #widthPanel {
+    flex: 1;
+    min-width: 0;
+    position: static;
+    transform: none;
+    flex-direction: row;
+    align-items: center;
     padding: 6px 8px;
-    gap: 8px;
+    gap: 6px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--grey-100);
     background: var(--grey-50);
@@ -609,8 +603,8 @@ canvas#c {
 
   #heightSlider::-webkit-slider-thumb,
   #widthSlider::-webkit-slider-thumb {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
   #widthSlider {
@@ -622,29 +616,32 @@ canvas#c {
   #barDot { display: none; }
 
   .panel-label {
-    font-size: 12px;
-    min-width: 28px;
+    font-size: 11px;
+    min-width: 26px;
+    flex-shrink: 0;
   }
 
   .num-input {
-    width: 44px;
-    min-height: 32px;
+    width: 40px;
+    min-height: 30px;
     padding: 4px 2px;
-    font-size: 13px;
-  }
-
-  .btn {
     font-size: 12px;
-    padding: 8px 6px;
-    min-height: 36px;
-    flex: 1 1 calc(20% - 5px);
-    min-width: calc(20% - 5px);
   }
 
-  .btn-reset {
-    flex: 1 1 100%;
-    min-width: 100%;
+  #bottomDock > .btn-reset {
+    order: 3;
+    width: 100%;
     min-height: 34px;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  #presetBtns .btn {
+    font-size: 11px;
+    padding: 8px 4px;
+    min-height: 34px;
+    flex: 1 1 calc(25% - 4px);
+    min-width: calc(25% - 4px);
   }
 
   #status {
@@ -652,18 +649,71 @@ canvas#c {
   }
 }
 
+@media (min-width: 769px) {
+  #profileWrap {
+    right: 110px;
+  }
+
+  #viewport .history-btns {
+    top: 20px;
+    right: 20px;
+    bottom: auto;
+    left: auto;
+  }
+
+  #viewport .btn-icon {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    min-height: 52px;
+    padding: 0;
+    background: var(--surface);
+  }
+
+  #viewport .btn-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  #slidersRow {
+    display: block;
+    position: static;
+    width: auto;
+    height: auto;
+    border: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  #heightPanel {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  #slidersRow #widthPanel {
+    position: absolute;
+    bottom: calc(20px + 118px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(480px, calc(100vw - 48px));
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 2;
+  }
+}
+
 @media (max-width: 380px) {
   :root {
-    --mobile-dock-h: clamp(188px, 32dvh, 260px);
+    --mobile-dock-h: clamp(200px, 40dvh, 280px);
   }
 
-  .btn {
-    flex: 1 1 calc(33.33% - 5px);
-    min-width: calc(33.33% - 5px);
-  }
-
-  .btn-reset {
-    flex: 1 1 100%;
-    min-width: 100%;
+  #presetBtns .btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: calc(50% - 4px);
   }
 }
