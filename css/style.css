@@ -27,8 +27,14 @@
   --radius: 12px;
   --radius-sm: 8px;
   --radius-pill: 999px;
-  --mobile-dock-h: clamp(210px, 38dvh, 300px);
+  --mobile-dock-h: clamp(188px, 34dvh, 268px);
   --dock-safe-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  --fs-ui: 15px;
+  --fs-label: 14px;
+  --fs-btn: 14px;
+  --fs-caption: 13px;
+  --fs-size-key: 13px;
+  --fs-size-val: 14px;
 }
 
 #viewport #btnReset,
@@ -48,25 +54,42 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: var(--bg);
-  -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
 }
 
+/* ── Mobile-first shell (터치·인앱 브라우저 기본) ── */
 #app {
   width: 100%;
+  height: 100dvh;
   height: 100%;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--dock-safe-bottom);
+  box-sizing: border-box;
 }
 
 #viewport {
-  position: fixed;
-  inset: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
 }
 
 canvas#c {
@@ -80,70 +103,73 @@ canvas#c {
 }
 
 #hud {
-  position: fixed;
-  inset: 0;
+  position: relative;
+  flex: 0 0 auto;
+  max-height: min(var(--mobile-dock-h), 42dvh);
   z-index: 1;
-  pointer-events: none;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--surface-border);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 -4px 16px rgba(2, 9, 19, 0.06);
   font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+  font-size: var(--fs-ui);
   color: var(--text);
   letter-spacing: -0.01em;
 }
 
-/* ── Brand (desktop) ── */
 .brand {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  padding: 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  max-width: 260px;
-  pointer-events: auto;
+  display: none;
 }
 
 .brand-name {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.03em;
 }
 
 .brand-sub {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--accent);
   margin-top: 4px;
 }
 
 .brand-hint {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-muted);
   margin-top: 10px;
   line-height: 1.55;
 }
 
-/* ── Size panel (desktop: viewport overlay 우상단) ── */
+/* ── Size panel (viewport overlay) ── */
 #profileWrap {
-  top: 20px;
-  right: 20px;
-  left: auto;
-  bottom: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  right: auto;
+  bottom: auto;
+  align-items: flex-start;
+  padding: 10px 12px;
+  max-width: min(220px, calc(100vw - 100px));
 }
 
 .preview-label {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -163,46 +189,57 @@ canvas#c {
 }
 
 .size-key {
-  font-size: 12px;
+  font-size: var(--fs-size-key);
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .size-value {
-  font-size: 13px;
+  font-size: var(--fs-size-val);
   font-weight: 700;
   color: var(--text-secondary);
 }
 
-/* ── Height (desktop: vertical) ── */
-#heightPanel {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+#profileWrap .size-stats {
+  align-items: flex-start;
+  gap: 6px;
+}
+
+#profileWrap .size-item {
+  width: 100%;
+}
+
+#heightPanel,
+#widthPanel {
+  width: 100%;
+  flex: 0 0 auto;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 18px 16px;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  pointer-events: all;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--grey-100);
+  background: var(--grey-50);
+  box-shadow: none;
+  pointer-events: auto;
 }
 
 .panel-label {
-  font-size: 13px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--text-secondary);
   flex-shrink: 0;
+  min-width: 28px;
 }
 
 #vSliderWrap {
   position: relative;
-  width: 36px;
-  height: 220px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -212,8 +249,8 @@ canvas#c {
 #heightSlider {
   -webkit-appearance: none;
   appearance: none;
-  transform: rotate(-90deg);
-  width: 220px;
+  transform: none;
+  width: 100%;
   height: 6px;
   background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--pct, 12.5%), var(--track) var(--pct, 12.5%), var(--track) 100%);
   border-radius: var(--radius-pill);
@@ -267,9 +304,10 @@ canvas#c {
 }
 
 .num-input {
-  width: 52px;
+  width: 48px;
+  min-height: 36px;
   font-family: inherit;
-  font-size: 15px;
+  font-size: var(--fs-ui);
   font-weight: 700;
   text-align: center;
   color: var(--text);
@@ -290,73 +328,95 @@ canvas#c {
 }
 
 .unit {
-  font-size: 13px;
+  font-size: var(--fs-caption);
   font-weight: 500;
   color: var(--text-muted);
 }
 
-/* ── Sliders row (mobile) / width slot ── */
 #slidersRow {
-  display: none;
-}
-
-/* ── Bottom dock (desktop) ── */
-#bottomDock {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 22px;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  pointer-events: all;
-  max-width: calc(100vw - 40px);
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  flex: 0 0 auto;
+  order: 1;
+}
+
+#bottomDock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  order: 0;
+  pointer-events: auto;
 }
 
 #presetBtns {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
+  order: 0;
 }
 
 #viewport #btnReset {
-  top: 20px;
-  right: 20px;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
   left: auto;
   bottom: auto;
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: var(--fs-btn);
   box-shadow: var(--shadow);
 }
 
-#widthPanel {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
+#viewport .history-btns {
+  top: auto;
+  left: auto;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+#viewport .btn-icon {
+  width: auto;
+  min-width: unset;
+  height: auto;
+  min-height: unset;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+
+#viewport .btn-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+#presetBtns .btn {
+  min-height: 40px;
+  padding: 10px 6px;
+  flex: 1 1 calc(25% - 4px);
+  min-width: calc(25% - 4px);
+}
+
+#status {
+  display: none;
 }
 
 #widthSlider {
   -webkit-appearance: none;
   appearance: none;
-  width: min(280px, 50vw);
+  width: 100%;
   height: 6px;
   background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--pct, 12.5%), var(--track) var(--pct, 12.5%), var(--track) 100%);
   border-radius: var(--radius-pill);
   cursor: pointer;
   outline: none;
   flex: 1;
-  min-width: 120px;
+  min-width: 0;
 }
 
 #widthSlider::-webkit-slider-thumb {
@@ -414,7 +474,7 @@ canvas#c {
 
 .btn {
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-btn);
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--grey-50);
@@ -450,21 +510,6 @@ canvas#c {
   background: var(--reset-active);
   border-color: var(--reset-active);
   color: var(--white);
-}
-
-#status {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  padding: 8px 14px;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-  pointer-events: auto;
 }
 
 #status.active {
@@ -520,214 +565,80 @@ canvas#c {
   min-height: 44px;
 }
 
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  #app {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
+/* ── Desktop (넓은 화면 + 마우스) ── */
+@media (min-width: 1025px) {
+  html:not(.layout-touch) {
+    --fs-ui: 15px;
+    --fs-label: 14px;
+    --fs-btn: 15px;
+    --fs-caption: 13px;
+    --fs-size-key: 13px;
+    --fs-size-val: 14px;
+  }
+
+  html:not(.layout-touch) #app {
+    display: block;
+    padding-bottom: 0;
     height: 100%;
-    overflow: hidden;
-    padding-bottom: var(--dock-safe-bottom);
-    box-sizing: border-box;
   }
 
-  #viewport {
-    position: relative;
-    flex: 1 1 auto;
-    min-height: 0;
-    order: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
+  html:not(.layout-touch) #viewport {
+    position: fixed;
+    inset: 0;
+    display: block;
+    flex: none;
   }
 
-  #profileWrap {
-    top: max(8px, env(safe-area-inset-top, 0px));
-    left: max(12px, env(safe-area-inset-left, 0px));
-    right: auto;
-    bottom: auto;
-    align-items: flex-start;
-    padding: 10px 12px;
-    max-width: min(200px, calc(100vw - 100px));
-  }
-
-  #profileWrap .size-stats {
-    align-items: flex-start;
-    gap: 5px;
-  }
-
-  #profileWrap .size-item {
-    width: 100%;
-  }
-
-  #viewport #btnReset {
-    top: max(8px, env(safe-area-inset-top, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  #viewport .history-btns {
-    top: auto;
-    left: auto;
-    bottom: max(10px, env(safe-area-inset-bottom, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
-    gap: 6px;
+  html:not(.layout-touch) #hud {
+    position: fixed;
+    inset: 0;
+    max-height: none;
     padding: 0;
-    margin: 0;
+    background: transparent;
     border: none;
-  }
-
-  #viewport .btn-icon {
-    width: auto;
-    min-width: unset;
-    height: auto;
-    min-height: unset;
-    padding: 6px 8px;
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid var(--surface-border);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow);
-  }
-
-  #viewport .btn-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .brand {
-    display: none;
-  }
-
-  #hud {
-    position: relative;
-    flex: 0 0 auto;
-    max-height: min(var(--mobile-dock-h), 42dvh);
-    order: 2;
-    inset: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 6px max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
-    background: var(--surface);
-    border-top: 1px solid var(--surface-border);
-    pointer-events: auto;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 0 -4px 16px rgba(2, 9, 19, 0.06);
-  }
-
-  #bottomDock {
-    display: contents;
-  }
-
-  #presetBtns {
-    order: 0;
-    width: 100%;
-    gap: 5px;
-    padding: 0;
-  }
-
-  :root {
-    --mobile-dock-h: clamp(168px, 32dvh, 250px);
-  }
-
-  #slidersRow {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-    order: 1;
-    width: 100%;
-    flex: 0 0 auto;
-  }
-
-  #heightPanel,
-  #widthPanel {
-    width: 100%;
-    flex: 0 0 auto;
-    min-width: 0;
-    position: static;
-    transform: none;
-    flex-direction: row;
-    align-items: center;
-    padding: 6px 8px;
-    gap: 6px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--grey-100);
-    background: var(--grey-50);
     box-shadow: none;
+    overflow: visible;
+    pointer-events: none;
   }
 
-  #vSliderWrap {
-    flex: 1;
-    min-width: 0;
-    height: 32px;
-    width: auto;
+  html:not(.layout-touch) .brand {
+    display: block;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 16px 20px;
+    max-width: 260px;
+    pointer-events: auto;
   }
 
-  #heightSlider {
-    transform: none;
-    width: 100%;
-    height: 6px;
-  }
-
-  #heightSlider::-webkit-slider-thumb,
-  #widthSlider::-webkit-slider-thumb {
-    width: 24px;
-    height: 24px;
-  }
-
-  #widthSlider {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-  }
-
-  #barDot { display: none; }
-
-  .panel-label {
-    font-size: 11px;
-    min-width: 26px;
-    flex-shrink: 0;
-  }
-
-  .num-input {
-    width: 40px;
-    min-height: 30px;
-    padding: 4px 2px;
-    font-size: 12px;
-  }
-
-  #presetBtns .btn {
-    font-size: 11px;
-    padding: 8px 4px;
-    min-height: 34px;
-    flex: 1 1 calc(25% - 4px);
-    min-width: calc(25% - 4px);
-  }
-
-  #status {
-    display: none;
-  }
-}
-
-@media (min-width: 769px) {
-  #profileWrap {
+  html:not(.layout-touch) #profileWrap {
+    top: 20px;
     right: 110px;
+    left: auto;
+    align-items: center;
+    padding: 14px 16px;
+    max-width: none;
   }
 
-  #viewport .history-btns {
+  html:not(.layout-touch) #profileWrap .size-stats {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  html:not(.layout-touch) #viewport #btnReset {
+    top: 20px;
+    right: 20px;
+    padding: 8px 14px;
+  }
+
+  html:not(.layout-touch) #viewport .history-btns {
     top: calc(20px + 44px);
     right: 20px;
     bottom: auto;
     left: auto;
   }
 
-  #viewport .btn-icon {
+  html:not(.layout-touch) #viewport .btn-icon {
     width: 52px;
     min-width: 52px;
     height: 52px;
@@ -736,50 +647,139 @@ canvas#c {
     background: var(--surface);
   }
 
-  #viewport .btn-icon svg {
+  html:not(.layout-touch) #viewport .btn-icon svg {
     width: 28px;
     height: 28px;
   }
 
-  #slidersRow {
+  html:not(.layout-touch) #bottomDock {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: calc(100vw - 40px);
+    padding: 18px 22px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    pointer-events: all;
+  }
+
+  html:not(.layout-touch) #presetBtns .btn {
+    min-height: auto;
+    padding: 10px 18px;
+    flex: 0 1 auto;
+    min-width: auto;
+  }
+
+  html:not(.layout-touch) #slidersRow {
     display: block;
     position: static;
     width: auto;
     height: auto;
-    border: none;
-    padding: 0;
-    background: transparent;
+    order: 0;
   }
 
-  #heightPanel {
+  html:not(.layout-touch) #heightPanel {
     position: absolute;
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    width: auto;
   }
 
-  #slidersRow #widthPanel {
+  html:not(.layout-touch) #vSliderWrap {
+    width: 36px;
+    height: 220px;
+    flex: none;
+  }
+
+  html:not(.layout-touch) #heightSlider {
+    transform: rotate(-90deg);
+    width: 220px;
+  }
+
+  html:not(.layout-touch) #barDot {
+    display: block;
+  }
+
+  html:not(.layout-touch) #slidersRow #widthPanel {
     position: absolute;
     bottom: calc(20px + 118px);
     left: 50%;
     transform: translateX(-50%);
     width: min(480px, calc(100vw - 48px));
     padding: 12px 18px;
+    gap: 16px;
     background: var(--surface);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     z-index: 2;
   }
+
+  html:not(.layout-touch) #widthSlider {
+    width: min(280px, 50vw);
+    min-width: 120px;
+    flex: 1;
+  }
+
+  html:not(.layout-touch) .num-input {
+    width: 52px;
+    min-height: auto;
+    padding: 7px 4px;
+  }
+
+  html:not(.layout-touch) #status {
+    display: block;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow);
+    pointer-events: auto;
+  }
 }
 
 @media (max-width: 380px) {
   :root {
-    --mobile-dock-h: clamp(200px, 40dvh, 280px);
+    --mobile-dock-h: clamp(200px, 42dvh, 280px);
   }
 
   #presetBtns .btn {
     flex: 1 1 calc(50% - 4px);
     min-width: calc(50% - 4px);
   }
+}
+
+/* 인앱 브라우저: viewport가 넓게 잡혀도 터치면 슬라이더 2줄 유지 */
+html.layout-touch #slidersRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+html.layout-touch #heightPanel,
+html.layout-touch #widthPanel {
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: row;
+  position: static;
+  transform: none;
 }

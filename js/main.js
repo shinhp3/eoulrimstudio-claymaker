@@ -1,6 +1,18 @@
 (function(){
 'use strict';
 
+// 터치·좁은 화면·인앱 브라우저(카카오톡 등) → 모바일 도크 레이아웃
+function updateLayoutMode() {
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  const noHover = window.matchMedia('(hover: none)').matches;
+  const touch = coarse || noHover || navigator.maxTouchPoints > 0;
+  const narrow = window.innerWidth <= 1024;
+  document.documentElement.classList.toggle('layout-touch', touch || narrow);
+}
+updateLayoutMode();
+window.addEventListener('resize', updateLayoutMode);
+window.addEventListener('orientationchange', updateLayoutMode);
+
 const canvas = document.getElementById('c');
 
 function canvasRect() {
@@ -18,8 +30,9 @@ function resizeRenderer() {
 
 // ── Scene (Toss TDS palette) ─────────────────────────────────────────────────
 const BG = 0xf9fafb;
-const CLAY = 0x0c3570;    // clay blue (deeper)
+const CLAY = 0x082a52;    // clay blue (deeper)
 const ACCENT = 0x3182f6;
+const GUIDE = 0x1d4ed8;   // size box outline (darker than accent)
 const WALL_THICKNESS_CM = 0.3; // fixed 3mm
 
 const SIZE_MIN = 0.5;
@@ -262,7 +275,7 @@ function redoProfile() {
 // ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
   color: CLAY, roughness: 0.42, metalness: 0.08,
-  emissive: 0x0f4588, emissiveIntensity: 0.1
+  emissive: 0x0a3568, emissiveIntensity: 0.12
 });
 
 let clayGroup = null;
@@ -397,15 +410,30 @@ updateFloor();
 
 // Size guide — wireframe box matching heightCm × widthCm exactly
 let sizeGuide = null;
-function updateSizeGuide() {
-  if (sizeGuide) { scene.remove(sizeGuide); sizeGuide.geometry.dispose(); }
-  const { height, diameter } = getActualSize();
-  const box = new THREE.BoxGeometry(diameter, height, diameter);
-  box.translate(0, 0, 0);
+function disposeSizeGuide() {
+  if (!sizeGuide) return;
+  scene.remove(sizeGuide);
+  sizeGuide.traverse((child) => {
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) child.material.dispose();
+  });
+  sizeGuide = null;
+}
+function makeGuideEdges(w, h, d, opacity) {
+  const box = new THREE.BoxGeometry(w, h, d);
   const edges = new THREE.EdgesGeometry(box);
-  sizeGuide = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
-    color: ACCENT, transparent: true, opacity: 0.3
+  box.dispose();
+  return new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+    color: GUIDE, transparent: true, opacity, linewidth: 2
   }));
+}
+function updateSizeGuide() {
+  disposeSizeGuide();
+  const { height, diameter } = getActualSize();
+  const g = new THREE.Group();
+  g.add(makeGuideEdges(diameter * 1.006, height * 1.006, diameter * 1.006, 0.26));
+  g.add(makeGuideEdges(diameter, height, diameter, 0.58));
+  sizeGuide = g;
   scene.add(sizeGuide);
 }
 
