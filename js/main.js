@@ -104,6 +104,20 @@ const PLATE_PROFILE_BAKED = [
   { r: 9.731, y: 1.078 }, { r: 9.806, y: 1.164 }, { r: 9.88, y: 1.25 }
 ];
 
+// 사용자 조각 밥그릇 (11×6 cm) — exportClayProfile() 로보낸 형태
+const RICEBOWL_PROFILE_BAKED = [
+  { r: 2.887, y: -3 }, { r: 3.063, y: -2.7 }, { r: 3.24, y: -2.425 },
+  { r: 3.418, y: -2.18 }, { r: 3.597, y: -1.945 }, { r: 3.772, y: -1.716 },
+  { r: 3.941, y: -1.492 }, { r: 4.1, y: -1.271 }, { r: 4.249, y: -1.054 },
+  { r: 4.385, y: -0.839 }, { r: 4.51, y: -0.625 }, { r: 4.624, y: -0.414 },
+  { r: 4.729, y: -0.205 }, { r: 4.826, y: 0.003 }, { r: 4.915, y: 0.21 },
+  { r: 4.998, y: 0.415 }, { r: 5.074, y: 0.619 }, { r: 5.145, y: 0.822 },
+  { r: 5.21, y: 1.024 }, { r: 5.271, y: 1.225 }, { r: 5.326, y: 1.425 },
+  { r: 5.378, y: 1.625 }, { r: 5.425, y: 1.823 }, { r: 5.469, y: 2.021 },
+  { r: 5.509, y: 2.218 }, { r: 5.546, y: 2.415 }, { r: 5.58, y: 2.61 },
+  { r: 5.612, y: 2.805 }, { r: 5.643, y: 3 }
+];
+
 function cloneProfile(pts) {
   return pts.map(p => ({ r: p.r, y: p.y }));
 }
@@ -143,42 +157,6 @@ function vaseShape(t) {
   ]);
 }
 
-// Footed rice bowl: 평바닥·받침 → 벽 → 입
-function riceBowlShape(t) {
-  if (t < 0.14) return 0.44;
-  if (t < 0.2) {
-    const u = (t - 0.14) / 0.06;
-    return 0.44 + u * 0.06;
-  }
-  if (t < 0.88) {
-    const u = (t - 0.2) / 0.68;
-    return 0.5 + 0.5 * (1 - Math.pow(1 - u, 1.12));
-  }
-  const u = (t - 0.88) / 0.12;
-  return 1.0 + 0.025 * u;
-}
-
-// 밥그릇: 받침은 원판, 벽은 받침 가장자리에서만 시작
-function makeRiceBowlProfile() {
-  const baseR = widthCm / 2;
-  const yMin = -PHT / 2;
-  const yMax = PHT / 2;
-  const footR = baseR * 0.5;
-  const yRise = Math.max(0.04, PHT * 0.05);
-  const pts = [
-    { r: footR, y: yMin },
-    { r: footR, y: yMin + yRise },
-  ];
-  const nWall = Math.max(14, N - 2);
-  for (let i = 2; i <= nWall; i++) {
-    const u = (i - 1) / (nWall - 1);
-    const mul = riceBowlShape(0.14 + u * 0.86);
-    const y = yMin + yRise + (yMax - yMin - yRise) * Math.pow(u, 0.92);
-    pts.push({ r: Math.max(MIN_R, baseR * Math.min(1.03, mul)), y });
-  }
-  return pts;
-}
-
 function smoothProfileOnce(pts) {
   const last = pts.length - 1;
   return pts.map((p, i, a) => ({
@@ -197,7 +175,7 @@ function smoothProfile(pts, passes = 1) {
 
 function makeProfile(type) {
   if (type === 'plate') return cloneProfile(PLATE_PROFILE_BAKED);
-  if (type === 'ricebowl') return makeRiceBowlProfile();
+  if (type === 'ricebowl') return cloneProfile(RICEBOWL_PROFILE_BAKED);
 
   const baseR = widthCm / 2;
   const out = [];
