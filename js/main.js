@@ -737,7 +737,13 @@ document.getElementById('btnRedo').addEventListener('click', () => redoProfile()
 document.getElementById('btnVase').addEventListener('click', () => loadPreset('vase'));
 document.getElementById('btnPlate').addEventListener('click', () => loadPreset('plate'));
 document.getElementById('btnRiceBowl').addEventListener('click', () => loadPreset('ricebowl'));
-document.getElementById('btnReset').addEventListener('click', () => loadPreset('cylinder'));
+const resetDialog = document.getElementById('resetDialog');
+document.getElementById('btnReset').addEventListener('click', () => resetDialog.showModal());
+document.getElementById('resetDialogCancel').addEventListener('click', () => resetDialog.close());
+document.getElementById('resetDialogConfirm').addEventListener('click', () => {
+  resetDialog.close();
+  loadPreset('cylinder');
+});
 
 resizeRenderer();
 fitCamera();

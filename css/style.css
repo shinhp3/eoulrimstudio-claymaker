@@ -18,15 +18,20 @@
   --text-secondary: var(--grey-700);
   --text-muted: var(--grey-500);
   --accent: var(--blue-500);
+  --reset-bg: #fff5f5;
+  --reset-border: #ffd6d6;
+  --reset-text: #c62828;
+  --reset-active: #e53935;
   --track: var(--grey-200);
   --shadow: 0 2px 12px rgba(2, 9, 19, 0.06), 0 1px 4px rgba(2, 9, 19, 0.04);
   --radius: 12px;
   --radius-sm: 8px;
   --radius-pill: 999px;
   --mobile-dock-h: clamp(210px, 38dvh, 300px);
-  --dock-safe-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  --dock-safe-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
 }
 
+#viewport #btnReset,
 #viewport .history-btns,
 #viewport #profileWrap {
   position: absolute;
@@ -34,6 +39,7 @@
   pointer-events: none;
 }
 
+#viewport #btnReset,
 #viewport .history-btns,
 #viewport #profileWrap,
 #viewport .btn-icon {
@@ -321,8 +327,14 @@ canvas#c {
   width: 100%;
 }
 
-#bottomDock > .btn-reset {
-  width: 100%;
+#viewport #btnReset {
+  top: 20px;
+  right: 20px;
+  left: auto;
+  bottom: auto;
+  padding: 8px 14px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
 }
 
 #widthPanel {
@@ -428,9 +440,16 @@ canvas#c {
   transform: none;
 }
 
+.btn-reset {
+  color: var(--reset-text);
+  background: var(--reset-bg);
+  border-color: var(--reset-border);
+}
+
 .btn-reset:active {
-  background: var(--grey-600);
-  border-color: var(--grey-600);
+  background: var(--reset-active);
+  border-color: var(--reset-active);
+  color: var(--white);
 }
 
 #status {
@@ -452,6 +471,53 @@ canvas#c {
   color: var(--accent);
   border-color: var(--blue-100);
   background: var(--blue-50);
+}
+
+/* ── Confirm dialog ── */
+.confirm-dialog {
+  border: none;
+  padding: 0;
+  margin: auto;
+  max-width: min(320px, calc(100vw - 40px));
+  width: calc(100% - 40px);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 32px rgba(2, 9, 19, 0.16);
+  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(25, 31, 40, 0.45);
+}
+
+.confirm-dialog-inner {
+  padding: 24px 20px 20px;
+}
+
+.confirm-dialog-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.confirm-dialog-desc {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.confirm-dialog-actions .btn {
+  flex: 1;
+  min-height: 44px;
 }
 
 /* ── Mobile ── */
@@ -494,6 +560,13 @@ canvas#c {
 
   #profileWrap .size-item {
     width: 100%;
+  }
+
+  #viewport #btnReset {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    padding: 6px 12px;
+    font-size: 12px;
   }
 
   #viewport .history-btns {
@@ -559,14 +632,14 @@ canvas#c {
   }
 
   :root {
-    --mobile-dock-h: clamp(168px, 30dvh, 240px);
+    --mobile-dock-h: clamp(168px, 32dvh, 250px);
   }
 
   #slidersRow {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
     order: 1;
     width: 100%;
     flex: 0 0 auto;
@@ -574,7 +647,8 @@ canvas#c {
 
   #heightPanel,
   #widthPanel {
-    flex: 1;
+    width: 100%;
+    flex: 0 0 auto;
     min-width: 0;
     position: static;
     transform: none;
@@ -628,14 +702,6 @@ canvas#c {
     font-size: 12px;
   }
 
-  #bottomDock > .btn-reset {
-    order: 3;
-    width: 100%;
-    min-height: 34px;
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-
   #presetBtns .btn {
     font-size: 11px;
     padding: 8px 4px;
@@ -655,7 +721,7 @@ canvas#c {
   }
 
   #viewport .history-btns {
-    top: 20px;
+    top: calc(20px + 44px);
     right: 20px;
     bottom: auto;
     left: auto;
