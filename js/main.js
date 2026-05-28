@@ -62,6 +62,9 @@ resizeRenderer();
 window.addEventListener('resize', resizeRenderer);
 window.addEventListener('orientationchange', () => setTimeout(resizeRenderer, 150));
 
+// mode를 ResizeObserver보다 먼저 선언 — 콜백이 동기 실행될 때 TDZ 방지
+let mode = 'idle'; // 'sculpt' | 'orbit' | 'pinch'
+
 const viewportEl = document.getElementById('viewport');
 if (viewportEl) {
   new ResizeObserver(() => {
@@ -431,6 +434,10 @@ function updateFloor() {
   grid.position.y = y + 0.01;
 }
 
+// sizeCompareOn / cardCompareGroup — updateFloor() → getObjectSpan() 보다 먼저 선언
+let cardCompareGroup = null;
+let sizeCompareOn = false;
+
 updateFloor();
 
 // Size guide — wireframe box matching heightCm × widthCm exactly
@@ -460,6 +467,76 @@ function updateSizeGuide() {
   g.add(makeGuideEdges(diameter, height, diameter, 0.58));
   sizeGuide = g;
   scene.add(sizeGuide);
+  if (sizeCompareOn) updateCardComparePosition();
+}
+
+// ── 신용카드 크기 비교 (86×54mm, 세로 8.6cm) ─────────────────────────────────
+const CARD_HEIGHT_CM = 8.6;
+const CARD_WIDTH_CM = 5.4;
+const CARD_THICK_CM = 0.076;
+const CARD_GAP_CM = 1.2;
+// cardCompareGroup, sizeCompareOn — 위(updateFloor 직전)에서 선언됨
+
+function buildCreditCardMesh() {
+  const group = new THREE.Group();
+  // 카메라 정면(z축)에서 카드의 넓은 면(가로×세로)이 보이도록 z를 두께축으로 둔다.
+  const geom = new THREE.BoxGeometry(CARD_WIDTH_CM, CARD_HEIGHT_CM, CARD_THICK_CM);
+  const body = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({
+    color: 0x1e3a5f,
+    roughness: 0.38,
+    metalness: 0.22,
+    emissive: 0x0a1a30,
+    emissiveIntensity: 0.08
+  }));
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
+  const edge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geom),
+    new THREE.LineBasicMaterial({ color: 0x8b95a1, transparent: true, opacity: 0.75 })
+  );
+  group.add(edge);
+  return group;
+}
+
+function updateCardComparePosition() {
+  if (!cardCompareGroup) return;
+  const { maxR } = getActualSize();
+  const yMin = profile.reduce((m, p) => Math.min(m, p.y), Infinity);
+  cardCompareGroup.position.set(
+    maxR + CARD_GAP_CM + CARD_WIDTH_CM / 2,
+    yMin + CARD_HEIGHT_CM / 2,
+    0
+  );
+}
+
+function updateSizeCompareButtons() {
+  const pressed = sizeCompareOn;
+  ['btnSizeCompareM', 'btnSizeCompareDock'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('btn-toggle-on', pressed);
+    el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  });
+}
+
+function setSizeCompareVisible(on) {
+  sizeCompareOn = on;
+  if (on) {
+    if (!cardCompareGroup) cardCompareGroup = buildCreditCardMesh();
+    updateCardComparePosition();
+    scene.add(cardCompareGroup);
+    setStatus('카드 비교 8.6×5.4×0.076cm', true);
+  } else if (cardCompareGroup) {
+    scene.remove(cardCompareGroup);
+    setStatus(READY_STATUS);
+  }
+  updateSizeCompareButtons();
+  fitCamera();
+}
+
+function toggleSizeCompare() {
+  setSizeCompareVisible(!sizeCompareOn);
 }
 
 // Sculpt grip: 잡은 위치에만 붙는 원형 패치 (전체 둘레 도넛 X)
@@ -478,8 +555,13 @@ createClay();
 const orbit = { theta:0, phi:1.1, radius:14, targetY:0, zoomMin:6, zoomMax:120 };
 
 function getObjectSpan() {
-  const { height, diameter } = getActualSize();
-  return Math.max(height, diameter, SIZE_MIN);
+  const { height, diameter, maxR } = getActualSize();
+  let span = Math.max(height, diameter, SIZE_MIN);
+  if (sizeCompareOn) {
+    const withCard = (maxR + CARD_GAP_CM + CARD_WIDTH_CM) * 2;
+    span = Math.max(span, height, CARD_HEIGHT_CM, withCard);
+  }
+  return span;
 }
 
 function fitCamera() {
@@ -514,7 +596,7 @@ fitCamera();
 
 // ── Interaction ───────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
-let mode = 'idle'; // 'sculpt' | 'orbit' | 'pinch'
+// mode는 위(ResizeObserver 직전)에서 선언됨
 let selRing = -1, lastClientX = 0, lastClientY = 0, orbitLast = {x:0,y:0};
 const pointers = new Map();
 let pinchStartDist = 0;
@@ -817,6 +899,8 @@ function onSmoothClick() {
 }
 document.getElementById('btnSmooth').addEventListener('click', onSmoothClick);
 document.getElementById('btnSmoothDock').addEventListener('click', onSmoothClick);
+document.getElementById('btnSizeCompareM').addEventListener('click', toggleSizeCompare);
+document.getElementById('btnSizeCompareDock').addEventListener('click', toggleSizeCompare);
 document.getElementById('btnUndo').addEventListener('click', () => undoProfile());
 document.getElementById('btnRedo').addEventListener('click', () => redoProfile());
 document.getElementById('btnUndoM').addEventListener('click', () => undoProfile());

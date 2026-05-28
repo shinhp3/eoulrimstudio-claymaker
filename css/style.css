@@ -390,18 +390,27 @@ html:not(.layout-desktop) .mobile-float #btnReset {
   box-shadow: var(--shadow);
 }
 
-html:not(.layout-desktop) .mobile-float #btnSmooth {
+html:not(.layout-desktop) .mobile-float #btnSmooth,
+html:not(.layout-desktop) .mobile-float #btnSizeCompareM {
   position: absolute;
   top: auto;
   right: auto;
   bottom: 10px;
-  left: max(12px, env(safe-area-inset-left, 0px));
   z-index: 4;
-  padding: 8px 14px;
+  min-width: 74px;
+  padding: 8px 10px;
   font-size: var(--fs-btn);
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--surface-border);
   box-shadow: var(--shadow);
+}
+
+html:not(.layout-desktop) .mobile-float #btnSmooth {
+  left: max(12px, env(safe-area-inset-left, 0px));
+}
+
+html:not(.layout-desktop) .mobile-float #btnSizeCompareM {
+  left: calc(max(12px, env(safe-area-inset-left, 0px)) + 82px);
 }
 
 html:not(.layout-desktop) .mobile-float .history-btns {
@@ -558,6 +567,18 @@ html:not(.layout-desktop) #presetBtns .btn {
 .btn-reset:active {
   background: var(--reset-active);
   border-color: var(--reset-active);
+  color: var(--white);
+}
+
+.btn-toggle-on {
+  color: var(--white);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-toggle-on:active {
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--white);
 }
 
@@ -755,6 +776,7 @@ html:not(.layout-desktop) #presetBtns .btn {
 
   html.layout-desktop .dock-block__body--actions {
     flex-wrap: nowrap;
+    gap: 8px;
   }
 
   html.layout-desktop .studio-dock .history-btns {
