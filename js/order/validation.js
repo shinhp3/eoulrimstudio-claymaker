@@ -1,92 +1,89 @@
-import { ALLOWED_EXTENSIONS } from './config.js';
+(function () {
+  const PHONE_RE = /^[\d\s\-+()]{7,20}$/;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const PHONE_RE = /^[\d\s\-+()]{7,20}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function parsePositiveInt(value) {
-  if (value === '' || value == null) return null;
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return NaN;
-  return Math.floor(n);
-}
-
-export function validateStep(step, state) {
-  switch (step) {
-    case 1:
-      return validateProductType(state);
-    case 2:
-      return { valid: true, errors: {} };
-    case 3:
-      return validateSize(state);
-    case 4:
-      return { valid: true, errors: {} };
-    case 5:
-      return validateContact(state);
-    default:
-      return { valid: true, errors: {} };
-  }
-}
-
-function validateProductType(state) {
-  if (!state.productType) {
-    return { valid: false, errors: { productType: '제작 유형을 선택해주세요.' } };
-  }
-  return { valid: true, errors: {} };
-}
-
-function validateSize(state) {
-  const { width, depth, height } = state.size;
-  const w = parsePositiveInt(width);
-  const d = parsePositiveInt(depth);
-  const h = parsePositiveInt(height);
-
-  if (w === null && d === null && h === null) {
-    return { valid: false, errors: { size: '가로, 세로, 높이 중 최소 1개 이상 입력해주세요.' } };
+  function parsePositive(value) {
+    if (value === '' || value == null) return null;
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return NaN;
+    return n;
   }
 
-  const fields = [
-    { key: 'width', val: w, raw: width, label: '가로' },
-    { key: 'depth', val: d, raw: depth, label: '세로' },
-    { key: 'height', val: h, raw: height, label: '높이' },
-  ];
-
-  for (const { val, raw, label } of fields) {
-    if (raw !== '' && raw != null && Number.isNaN(val)) {
-      return { valid: false, errors: { size: `${label}는 0보다 큰 숫자를 입력해주세요.` } };
+  function validateModeling(state) {
+    if (!state.modelingTier) {
+      return { valid: false, errors: { modeling: '모델링 등급을 선택해주세요.' } };
     }
+    return { valid: true, errors: {} };
   }
 
-  return { valid: true, errors: {} };
-}
+  function validateShapeAndDims(state) {
+    if (!state.shape || !OrderEstimate.SHAPES[state.shape]) {
+      return { valid: false, errors: { shape: '형태를 선택해주세요.' } };
+    }
+    const shape = OrderEstimate.SHAPES[state.shape];
+    const x = parsePositive(state.dims.x);
+    const z = parsePositive(state.dims.z);
+    const y = shape.useY ? parsePositive(state.dims.y) : 0;
 
-function validateContact(state) {
-  const { kakao, phone, email } = state.contact;
-  const hasKakao = kakao.trim().length > 0;
-  const hasPhone = phone.trim().length > 0;
-  const hasEmail = email.trim().length > 0;
-
-  if (!hasKakao && !hasPhone && !hasEmail) {
-    return { valid: false, errors: { contact: '연락처를 최소 1개 이상 입력해주세요.' } };
+    if (x === null || Number.isNaN(x)) {
+      return { valid: false, errors: { dims: '치수를 올바르게 입력해주세요.' } };
+    }
+    if (z === null || Number.isNaN(z)) {
+      return { valid: false, errors: { dims: '치수를 올바르게 입력해주세요.' } };
+    }
+    if (shape.useY && (y === null || Number.isNaN(y))) {
+      return { valid: false, errors: { dims: '치수를 올바르게 입력해주세요.' } };
+    }
+    if (x > OrderEstimate.CONFIG.MAX_DIM || z > OrderEstimate.CONFIG.MAX_DIM) {
+      return { valid: false, errors: { dims: OrderEstimate.CONFIG.MAX_DIM + 'mm 이하로 입력해주세요.' } };
+    }
+    if (shape.useY && y > OrderEstimate.CONFIG.MAX_DIM) {
+      return { valid: false, errors: { dims: OrderEstimate.CONFIG.MAX_DIM + 'mm 이하로 입력해주세요.' } };
+    }
+    return { valid: true, errors: {} };
   }
 
-  if (hasPhone && !PHONE_RE.test(phone.trim())) {
-    return { valid: false, errors: { contact: '올바른 전화번호 형식을 입력해주세요.' } };
+  function validateContact(state) {
+    const { kakao, phone, email } = state.contact;
+    const hasKakao = kakao.trim().length > 0;
+    const hasPhone = phone.trim().length > 0;
+    const hasEmail = email.trim().length > 0;
+
+    if (!hasKakao && !hasPhone && !hasEmail) {
+      return { valid: false, errors: { contact: '연락처를 최소 1개 이상 입력해주세요.' } };
+    }
+    if (hasPhone && !PHONE_RE.test(phone.trim())) {
+      return { valid: false, errors: { contact: '올바른 전화번호 형식을 입력해주세요.' } };
+    }
+    if (hasEmail && !EMAIL_RE.test(email.trim())) {
+      return { valid: false, errors: { contact: '올바른 이메일 형식을 입력해주세요.' } };
+    }
+    return { valid: true, errors: {} };
   }
 
-  if (hasEmail && !EMAIL_RE.test(email.trim())) {
-    return { valid: false, errors: { contact: '올바른 이메일 형식을 입력해주세요.' } };
-  }
+  window.OrderValidation = {
+    validateStep(step, state) {
+      switch (step) {
+        case 1: return validateModeling(state);
+        case 2: return validateShapeAndDims(state);
+        case 3: return { valid: true, errors: {} };
+        case 4:
+          if (!state.estimate) {
+            return { valid: false, errors: { contact: '견적 정보가 없습니다. 형태·치수를 다시 확인해주세요.' } };
+          }
+          return validateContact(state);
+        default: return { valid: true, errors: {} };
+      }
+    },
 
-  return { valid: true, errors: {} };
-}
-
-export function isAllowedExtension(filename) {
-  const ext = filename.split('.').pop()?.toLowerCase();
-  return ext && ALLOWED_EXTENSIONS.includes(ext);
-}
-
-export function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+    computeEstimate(state) {
+      const shapeResult = validateShapeAndDims(state);
+      if (!shapeResult.valid) return null;
+      const shape = OrderEstimate.SHAPES[state.shape];
+      const x = Number(state.dims.x);
+      const y = shape.useY ? Number(state.dims.y) : 0;
+      const z = Number(state.dims.z);
+      return OrderEstimate.estimateManual(state.shape, x, y, z, OrderEstimate.FIXED_INFILL);
+    },
+  };
+})();

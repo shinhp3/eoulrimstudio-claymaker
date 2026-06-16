@@ -1,59 +1,25 @@
-const initialState = () => ({
-  currentStep: 1,
-  productType: null,
-  files: [],
-  size: { width: '', depth: '', height: '' },
-  description: '',
-  contact: { kakao: '', phone: '', email: '' },
-});
-
-let state = initialState();
-
-export function getState() {
-  return state;
-}
-
-export function setState(partial) {
-  state = { ...state, ...partial };
-  return state;
-}
-
-export function updateSize(field, value) {
-  state.size = { ...state.size, [field]: value };
-  return state;
-}
-
-export function updateContact(field, value) {
-  state.contact = { ...state.contact, [field]: value };
-  return state;
-}
-
-export function addFiles(newFiles) {
-  state.files = [...state.files, ...newFiles];
-  return state;
-}
-
-export function removeFile(fileId) {
-  const file = state.files.find(f => f.id === fileId);
-  if (file?.previewUrl) URL.revokeObjectURL(file.previewUrl);
-  state.files = state.files.filter(f => f.id !== fileId);
-  return state;
-}
-
-export function setProductType(typeId) {
-  state.productType = typeId;
-  return state;
-}
-
-export function goToStep(step) {
-  state.currentStep = step;
-  return state;
-}
-
-export function resetState() {
-  state.files.forEach(f => {
-    if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+(function () {
+  const initialState = () => ({
+    currentStep: 1,
+    modelingTier: null,
+    shape: null,
+    dims: { x: '', y: '', z: '' },
+    description: '',
+    contact: { kakao: '', phone: '', email: '' },
+    estimate: null,
   });
-  state = initialState();
-  return state;
-}
+
+  let state = initialState();
+
+  window.OrderState = {
+    getState() { return state; },
+    setState(partial) { state = { ...state, ...partial }; return state; },
+    setModelingTier(tier) { state.modelingTier = tier; return state; },
+    setShape(shape) { state.shape = shape; return state; },
+    updateDim(field, value) { state.dims = { ...state.dims, [field]: value }; return state; },
+    updateContact(field, value) { state.contact = { ...state.contact, [field]: value }; return state; },
+    setEstimate(estimate) { state.estimate = estimate; return state; },
+    goToStep(step) { state.currentStep = step; return state; },
+    resetState() { state = initialState(); return state; },
+  };
+})();

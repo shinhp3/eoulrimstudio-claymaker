@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>도자기 석고몰드 주문제작</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="css/order.css">
 </head>
 <body class="order-landing">
-<main class="landing">
+
+<!-- 선택 페이지 -->
+<main class="landing" id="landingView">
   <header class="landing__header">
     <h1 class="landing__title">도자기 석고몰드 주문제작</h1>
     <p class="landing__subtitle">원하는 형태를 제작 의뢰하거나, 예상 견적을 먼저 확인해보세요.</p>
@@ -18,9 +19,9 @@
     <article class="choice-card choice-card--primary">
       <div class="choice-card__body">
         <h2 class="choice-card__title">바로 주문 제작 의뢰하기</h2>
-        <p class="choice-card__desc">사진, 스케치, 도면을 업로드하고 제작 가능 여부 및 견적 상담을 받아보세요.</p>
+        <p class="choice-card__desc">모델링 등급·형태·치수를 입력하면 예상 견적을 확인하고 상담을 신청할 수 있습니다.</p>
       </div>
-      <a href="order.html" class="btn btn-primary choice-card__btn">주문 의뢰 시작하기</a>
+      <button type="button" class="btn btn-primary choice-card__btn" id="btnStartOrder">주문 의뢰 시작하기</button>
     </article>
 
     <article class="choice-card">
@@ -32,5 +33,114 @@
     </article>
   </div>
 </main>
+
+<!-- 주문 의뢰 폼 -->
+<div class="order-shell" id="orderShell" hidden>
+  <header class="order-header">
+    <button type="button" class="order-header__back" id="btnBackLanding" aria-label="선택 페이지로 돌아가기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    <h1 class="order-header__title">주문 제작 의뢰</h1>
+  </header>
+
+  <nav class="stepper" id="stepper" aria-label="진행 단계"></nav>
+
+  <main class="order-main">
+    <form id="orderForm" class="order-form" novalidate>
+      <section class="step-panel" data-step="1" aria-labelledby="step1Title">
+        <h2 class="step-panel__question" id="step1Title">어떤 형태를 만들고 싶으신가요?</h2>
+        <p class="step-panel__hint">복잡도에 따라 모델링 등급이 달라집니다.</p>
+        <div class="tier-grid" id="tierGrid"></div>
+        <div class="tier-result" id="tierResult" hidden>
+          <p class="tier-result__title" id="tierResultTitle"></p>
+          <p class="tier-result__desc" id="tierResultDesc"></p>
+        </div>
+        <p class="field-error" id="errorModeling" hidden></p>
+      </section>
+
+      <section class="step-panel" data-step="2" hidden aria-labelledby="step2Title">
+        <h2 class="step-panel__question" id="step2Title">형태 · 치수 입력</h2>
+        <p class="step-panel__subtitle">형태 선택</p>
+        <div class="shape-grid" id="shapeGrid" role="radiogroup" aria-label="형태 선택"></div>
+        <p class="field-error" id="errorShape" hidden></p>
+
+        <p class="step-panel__subtitle step-panel__subtitle--spaced">치수 입력</p>
+        <div class="dim-grid" id="dimGrid">
+          <div class="dim-field">
+            <label class="dim-field__label" for="dimX" id="labelX">지름 (D)</label>
+            <div class="dim-field__input-wrap">
+              <input type="number" id="dimX" class="text-input dim-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="dim-field__unit">mm</span>
+            </div>
+          </div>
+          <div class="dim-field" id="fieldY" hidden>
+            <label class="dim-field__label" for="dimY">세로 (Y)</label>
+            <div class="dim-field__input-wrap">
+              <input type="number" id="dimY" class="text-input dim-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="dim-field__unit">mm</span>
+            </div>
+          </div>
+          <div class="dim-field">
+            <label class="dim-field__label" for="dimZ" id="labelZ">높이 (H)</label>
+            <div class="dim-field__input-wrap">
+              <input type="number" id="dimZ" class="text-input dim-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="dim-field__unit">mm</span>
+            </div>
+          </div>
+        </div>
+        <p class="field-error" id="errorDims" hidden></p>
+      </section>
+
+      <section class="step-panel" data-step="3" hidden aria-labelledby="step3Title">
+        <h2 class="step-panel__question" id="step3Title">원하는 형태나 참고사항을 알려주세요</h2>
+        <textarea id="description" class="text-area" rows="6" placeholder="손잡이는 둥글게 하고 싶어요.&#10;주입구 길이는 짧게 원합니다.&#10;기존 제품과 유사한 느낌으로 제작하고 싶습니다."></textarea>
+      </section>
+
+      <section class="step-panel" data-step="4" hidden aria-labelledby="step4Title">
+        <h2 class="step-panel__question" id="step4Title">예상 견적 · 연락처</h2>
+
+        <div class="estimate-panel" id="estimatePanel" hidden>
+          <p class="estimate-panel__label">예상 제작 비용 <span class="estimate-panel__note">(참고용)</span></p>
+          <p class="estimate-panel__total" id="estimateTotal">—</p>
+          <p class="estimate-panel__disclaimer">형상 복잡도에 따라 실제 금액은 달라질 수 있습니다. 채널톡 상담 후 최종 확정됩니다.</p>
+        </div>
+
+        <p class="step-panel__subtitle step-panel__subtitle--spaced">견적 받을 연락처</p>
+        <p class="step-panel__hint">카카오톡, 전화번호, 이메일 중 최소 1개 이상</p>
+        <div class="contact-fields">
+          <div class="form-field">
+            <label class="form-field__label" for="contactKakao">카카오톡 ID</label>
+            <input type="text" id="contactKakao" class="text-input" placeholder="카카오톡 ID" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="contactPhone">전화번호</label>
+            <input type="tel" id="contactPhone" class="text-input" placeholder="010-0000-0000" autocomplete="tel">
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="contactEmail">이메일</label>
+            <input type="email" id="contactEmail" class="text-input" placeholder="example@email.com" autocomplete="email">
+          </div>
+        </div>
+        <p class="field-error" id="errorContact" hidden></p>
+      </section>
+    </form>
+  </main>
+
+  <footer class="order-footer">
+    <button type="button" class="btn" id="btnPrev" hidden>이전</button>
+    <button type="button" class="btn btn-primary" id="btnNext">다음</button>
+  </footer>
+</div>
+
+<script src="js/order/config.js"></script>
+<script src="js/order/estimate.js"></script>
+<script src="js/order/state.js"></script>
+<script src="js/order/validation.js"></script>
+<script src="js/order/stepper.js"></script>
+<script src="js/order/channelTalk.js"></script>
+<script src="js/order/app.js"></script>
+<script src="js/landing.js"></script>
 </body>
 </html>

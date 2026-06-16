@@ -1,23 +1,24 @@
-export const STEPS = [
-  { id: 1, num: '01', label: '제작 유형' },
-  { id: 2, num: '02', label: '참고자료' },
-  { id: 3, num: '03', label: '크기' },
-  { id: 4, num: '04', label: '설명' },
-  { id: 5, num: '05', label: '연락처' },
-];
+window.OrderConfig = {
+  STEPS: [
+    { id: 1, num: '01', label: '모델링' },
+    { id: 2, num: '02', label: '형태·치수' },
+    { id: 3, num: '03', label: '설명' },
+    { id: 4, num: '04', label: '견적·연락' },
+  ],
+  MODELING_TIERS: [
+    { id: 'lite', title: '단순한 형태', desc: '박스, 원통 등 기본 도형', recommend: 'lite' },
+    { id: 'standard', title: '곡선·복합 형태', desc: '손잡이 잔, 뚜껑 형태, 곡선이 많은 형태', recommend: 'standard' },
+    { id: 'premium', title: '복잡한 외형', desc: '약간의 장식, 복잡한 형태', recommend: 'premium' },
+    { id: 'custom', title: '정밀·분할', desc: '분할·질감·복잡한 장식 (상담 후 확정)', recommend: 'custom' },
+  ],
+  RECOMMEND_MAP: {
+    lite: { title: '단순한 형태', desc: '박스, 원통 등 기본 도형에 적합합니다.' },
+    standard: { title: '곡선·복합 형태', desc: '손잡이 잔, 뚜껑 형태 등 곡선이 많은 형태에 적합합니다.' },
+    premium: { title: '복잡한 외형', desc: '장식이나 복잡한 실루엣 제작에 적합합니다.' },
+    custom: { title: '정밀·분할', desc: '분할·질감·복잡한 장식은 상담 후 견적이 확정됩니다.' },
+  },
+  SHAPE_KEYS: ['cup', 'plate', 'bowl', 'etc'],
+  CHANNEL_TALK_PLUGIN_KEY: '6ca8205b-492b-4f44-97fd-f8fa35026101',
+};
 
-export const PRODUCT_TYPES = [
-  { id: 'cup', label: '컵' },
-  { id: 'multi', label: '다관' },
-  { id: 'vase', label: '화병' },
-  { id: 'objet', label: '오브제' },
-  { id: 'other', label: '기타' },
-];
-
-export const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'stl', 'obj', 'zip'];
-
-export const ACCEPT_ATTR = ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',');
-
-export const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB per file
-
-export const TOTAL_STEPS = STEPS.length;
+OrderConfig.TOTAL_STEPS = OrderConfig.STEPS.length;
