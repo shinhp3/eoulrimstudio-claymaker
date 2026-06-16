@@ -6,6 +6,7 @@ import {
 import { validateStep } from './validation.js';
 import { renderStepper, scrollStepperToActive } from './stepper.js';
 import { initFileUpload } from './fileUpload.js';
+import { initChannelTalk, openOrderInquiry } from './channelTalk.js';
 
 const els = {
   shell: document.getElementById('orderShell'),
@@ -172,13 +173,9 @@ function handlePrev() {
 
 function submitOrder() {
   const state = getState();
-  console.log('[Order Submit]', {
-    productType: state.productType,
-    files: state.files.map(f => ({ name: f.name, size: f.size })),
-    size: state.size,
-    description: state.description,
-    contact: state.contact,
-  });
+  const opened = openOrderInquiry(state);
+
+  if (!opened) return;
 
   els.shell.hidden = true;
   els.complete.hidden = false;
@@ -222,6 +219,7 @@ function bindContactInputs() {
 }
 
 function init() {
+  initChannelTalk();
   initProductTypes();
   syncFormFromState();
   showStep(1);
