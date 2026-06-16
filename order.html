@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>주문 제작 의뢰 — 도자기 석고몰드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="css/order.css">
+</head>
+<body class="order-form-page">
+<div class="order-shell" id="orderShell">
+  <header class="order-header">
+    <a href="index.html" class="order-header__back" aria-label="선택 페이지로 돌아가기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </a>
+    <h1 class="order-header__title">주문 제작 의뢰</h1>
+  </header>
+
+  <nav class="stepper" id="stepper" aria-label="진행 단계"></nav>
+
+  <main class="order-main">
+    <form id="orderForm" class="order-form" novalidate>
+      <!-- Step 1: 제작 유형 -->
+      <section class="step-panel" data-step="1" aria-labelledby="step1Title">
+        <h2 class="step-panel__question" id="step1Title">무엇을 제작하시나요?</h2>
+        <div class="option-grid" id="productTypeGrid" role="radiogroup" aria-label="제작 유형"></div>
+        <p class="field-error" id="errorProductType" hidden></p>
+      </section>
+
+      <!-- Step 2: 참고 자료 -->
+      <section class="step-panel" data-step="2" hidden aria-labelledby="step2Title">
+        <h2 class="step-panel__question" id="step2Title">참고 자료를 업로드해주세요</h2>
+        <p class="step-panel__hint">사진, 스케치, 3D 파일 업로드 가능</p>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" class="upload-zone__input" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.zip">
+          <div class="upload-zone__content">
+            <svg class="upload-zone__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p class="upload-zone__text">파일을 드래그하거나 클릭하여 업로드</p>
+            <p class="upload-zone__formats">jpg, png, webp, pdf, stl, obj, zip</p>
+          </div>
+        </div>
+        <ul class="file-preview-list" id="filePreviewList"></ul>
+      </section>
+
+      <!-- Step 3: 크기 -->
+      <section class="step-panel" data-step="3" hidden aria-labelledby="step3Title">
+        <h2 class="step-panel__question" id="step3Title">대략적인 크기를 알려주세요</h2>
+        <div class="size-fields">
+          <div class="size-field">
+            <label class="size-field__label" for="sizeWidth">가로</label>
+            <div class="size-field__input-wrap">
+              <input type="number" id="sizeWidth" class="text-input size-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="size-field__unit">mm</span>
+            </div>
+          </div>
+          <div class="size-field">
+            <label class="size-field__label" for="sizeDepth">세로</label>
+            <div class="size-field__input-wrap">
+              <input type="number" id="sizeDepth" class="text-input size-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="size-field__unit">mm</span>
+            </div>
+          </div>
+          <div class="size-field">
+            <label class="size-field__label" for="sizeHeight">높이</label>
+            <div class="size-field__input-wrap">
+              <input type="number" id="sizeHeight" class="text-input size-field__input" min="1" step="1" placeholder="0" inputmode="numeric">
+              <span class="size-field__unit">mm</span>
+            </div>
+          </div>
+        </div>
+        <p class="field-error" id="errorSize" hidden></p>
+      </section>
+
+      <!-- Step 4: 설명 -->
+      <section class="step-panel" data-step="4" hidden aria-labelledby="step4Title">
+        <h2 class="step-panel__question" id="step4Title">원하는 형태나 참고사항을 알려주세요</h2>
+        <textarea id="description" class="text-area" rows="6" placeholder="손잡이는 둥글게 하고 싶어요.&#10;주입구 길이는 짧게 원합니다.&#10;기존 제품과 유사한 느낌으로 제작하고 싶습니다."></textarea>
+      </section>
+
+      <!-- Step 5: 연락처 -->
+      <section class="step-panel" data-step="5" hidden aria-labelledby="step5Title">
+        <h2 class="step-panel__question" id="step5Title">견적 받을 연락처를 남겨주세요</h2>
+        <p class="step-panel__hint">카카오톡, 전화번호, 이메일 중 최소 1개 이상 입력해주세요</p>
+        <div class="contact-fields">
+          <div class="form-field">
+            <label class="form-field__label" for="contactKakao">카카오톡 ID</label>
+            <input type="text" id="contactKakao" class="text-input" placeholder="카카오톡 ID" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="contactPhone">전화번호</label>
+            <input type="tel" id="contactPhone" class="text-input" placeholder="010-0000-0000" autocomplete="tel">
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="contactEmail">이메일</label>
+            <input type="email" id="contactEmail" class="text-input" placeholder="example@email.com" autocomplete="email">
+          </div>
+        </div>
+        <p class="field-error" id="errorContact" hidden></p>
+      </section>
+    </form>
+  </main>
+
+  <footer class="order-footer">
+    <button type="button" class="btn" id="btnPrev" hidden>이전</button>
+    <button type="button" class="btn btn-primary" id="btnNext">다음</button>
+  </footer>
+</div>
+
+<!-- 완료 화면 -->
+<div class="order-complete" id="orderComplete" hidden>
+  <div class="order-complete__inner">
+    <div class="order-complete__icon" aria-hidden="true">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <h2 class="order-complete__title">의뢰가 접수되었습니다</h2>
+    <p class="order-complete__desc">검토 후 제작 가능 여부 및 예상 견적을 연락드리겠습니다.</p>
+    <a href="index.html" class="btn btn-primary order-complete__btn">홈으로 돌아가기</a>
+  </div>
+</div>
+
+<script type="module" src="js/order/app.js"></script>
+</body>
+</html>

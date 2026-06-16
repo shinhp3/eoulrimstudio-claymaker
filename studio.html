@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>3D 견적 확인 — Clay Studio</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="viewport">
+    <canvas id="c"></canvas>
+
+    <div id="profileWrap">
+      <div class="preview-label">실제 사이즈</div>
+      <div class="size-stats">
+        <div class="size-item">
+          <span class="size-key">최대 가로</span>
+          <span class="size-value"><span id="actualWidth">10.0</span> cm</span>
+        </div>
+        <div class="size-item">
+          <span class="size-key">실제 높이</span>
+          <span class="size-value"><span id="actualHeight">10.0</span> cm</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-float ui-mobile-only">
+      <button type="button" class="btn btn-reset" id="btnReset">초기화</button>
+      <div class="history-btns" aria-label="실행 취소">
+        <button type="button" class="btn btn-icon" id="btnUndoM" disabled title="되돌아가기" aria-label="되돌아가기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
+        <button type="button" class="btn btn-icon" id="btnRedoM" disabled title="되돌리기" aria-label="되돌리기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+          </svg>
+        </button>
+      </div>
+      <button type="button" class="btn" id="btnSmooth">다듬기</button>
+      <button type="button" class="btn btn-toggle" id="btnSizeCompareM" aria-pressed="false" title="신용카드(86×54×0.76mm)로 크기 비교">크기확인</button>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="brand">
+      <div class="brand-name">Clay Studio</div>
+      <div class="brand-sub">도자기를 만들어보세요</div>
+      <div class="brand-hint">조각: 드래그 · 회전: 빈 곳 · 확대: 두 손가락</div>
+    </div>
+
+    <div id="bottomDock">
+      <div class="studio-dock ui-desktop-only">
+        <div class="studio-dock__row studio-dock__row--tools">
+          <div class="dock-block">
+            <span class="dock-block__label">기록</span>
+            <div class="dock-block__body">
+              <div class="history-btns" aria-label="실행 취소">
+                <button type="button" class="btn btn-icon" id="btnUndo" disabled title="되돌아가기" aria-label="되돌아가기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                  </svg>
+                </button>
+                <button type="button" class="btn btn-icon" id="btnRedo" disabled title="되돌리기" aria-label="되돌리기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 14l5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="dock-block">
+            <span class="dock-block__label">편집</span>
+            <div class="dock-block__body dock-block__body--actions">
+              <button type="button" class="btn" id="btnSmoothDock">다듬기</button>
+              <button type="button" class="btn btn-toggle" id="btnSizeCompareDock" aria-pressed="false" title="신용카드(86×54×0.76mm)로 크기 비교">크기확인</button>
+              <button type="button" class="btn btn-reset" id="btnResetDesk">초기화</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dock-presets">
+        <span class="dock-block__label ui-desktop-only">프리셋</span>
+        <div id="presetBtns" class="btns">
+          <button type="button" class="btn" id="btnVase">화병</button>
+          <button type="button" class="btn" id="btnPlate">접시</button>
+          <button type="button" class="btn" id="btnRiceBowl">밥그릇</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="slidersRow">
+      <div id="heightPanel">
+        <div class="panel-label">높이</div>
+        <div id="vSliderWrap">
+          <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.5">
+          <div id="barDot"></div>
+        </div>
+        <div class="num-row">
+          <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.5">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+      <div id="widthPanel">
+        <span class="panel-label">너비</span>
+        <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.5">
+        <div class="num-row">
+          <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.5">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="status">준비됨</div>
+  </div>
+</div>
+
+<dialog id="resetDialog" class="confirm-dialog" aria-labelledby="resetDialogTitle">
+  <div class="confirm-dialog-inner">
+    <h2 id="resetDialogTitle" class="confirm-dialog-title">초기화 하시겠습니까?</h2>
+    <p class="confirm-dialog-desc">지금까지 만든 형태가 기본 원통으로 돌아갑니다.</p>
+    <div class="confirm-dialog-actions">
+      <button type="button" class="btn" id="resetDialogCancel">취소</button>
+      <button type="button" class="btn btn-reset" id="resetDialogConfirm">초기화</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
