@@ -44,12 +44,11 @@
   }
 
   function validateContact(state) {
-    const { kakao, phone, email } = state.contact;
-    const hasKakao = kakao.trim().length > 0;
+    const { phone, email } = state.contact;
     const hasPhone = phone.trim().length > 0;
     const hasEmail = email.trim().length > 0;
 
-    if (!hasKakao && !hasPhone && !hasEmail) {
+    if (!hasPhone && !hasEmail) {
       return { valid: false, errors: { contact: '연락처를 최소 1개 이상 입력해주세요.' } };
     }
     if (hasPhone && !PHONE_RE.test(phone.trim())) {
@@ -61,13 +60,21 @@
     return { valid: true, errors: {} };
   }
 
+  function validateImages(state) {
+    if (state.images.length > OrderConfig.MAX_IMAGES) {
+      return { valid: false, errors: { images: '이미지는 최대 ' + OrderConfig.MAX_IMAGES + '장까지 첨부할 수 있습니다.' } };
+    }
+    return { valid: true, errors: {} };
+  }
+
   window.OrderValidation = {
     validateStep(step, state) {
       switch (step) {
         case 1: return validateModeling(state);
         case 2: return validateShapeAndDims(state);
         case 3: return { valid: true, errors: {} };
-        case 4:
+        case 4: return validateImages(state);
+        case 5:
           if (!state.estimate) {
             return { valid: false, errors: { contact: '견적 정보가 없습니다. 형태·치수를 다시 확인해주세요.' } };
           }

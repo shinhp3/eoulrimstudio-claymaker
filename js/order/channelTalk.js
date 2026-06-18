@@ -42,13 +42,21 @@
     }
 
     lines.push('', '- 연락처');
-    const { kakao, phone, email } = state.contact;
-    if (kakao.trim()) lines.push('  · 카카오톡: ' + kakao.trim());
+    const { phone, email } = state.contact;
     if (phone.trim()) lines.push('  · 전화번호: ' + phone.trim());
     if (email.trim()) lines.push('  · 이메일: ' + email.trim());
 
-    lines.push('', '참고 사진·도면은 채팅에 첨부 부탁드립니다.', '상세 상담 부탁드립니다.');
+    lines.push('', '상세 상담 부탁드립니다.');
     return lines.join('\n');
+  }
+
+  function appendImageUrls(message, imageUrls) {
+    if (!imageUrls) return message;
+    var urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+    urls = urls.filter(Boolean);
+    if (!urls.length) return message;
+    /* 이미지 URL은 줄바꿈으로 구분해야 채널톡에서 미리보기(링크 카드)가 뜹니다 */
+    return message + '\n\n참고 이미지:\n' + urls.join('\n');
   }
 
   function ensureChannelStub() {
@@ -83,16 +91,14 @@
   }
 
   window.OrderChannelTalk = {
-    buildOrderInquiryMessage,
-    boot: loadChannelSDK,
-
-    openOrderInquiry(state) {
-      if (!navigator.onLine) return false;
-      if (!state.estimate) return false;
+    openOrderInquiry(state, imageUrls) {
+      if (!navigator.onLine) return Promise.resolve(false);
+      if (!state.estimate) return Promise.resolve(false);
 
       return loadChannelSDK().then(loaded => {
         if (!loaded || !window.ChannelIO) return false;
-        window.ChannelIO('openChat', undefined, buildOrderInquiryMessage(state));
+        var message = appendImageUrls(buildOrderInquiryMessage(state), imageUrls);
+        window.ChannelIO('openChat', undefined, message);
         return true;
       });
     },

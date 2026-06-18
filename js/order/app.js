@@ -20,14 +20,16 @@
     els.labelX = document.getElementById('labelX');
     els.labelZ = document.getElementById('labelZ');
     els.description = document.getElementById('description');
+    els.imageInput = document.getElementById('imageInput');
+    els.imageList = document.getElementById('imageList');
     els.estimatePanel = document.getElementById('estimatePanel');
     els.estimateTotal = document.getElementById('estimateTotal');
-    els.contactKakao = document.getElementById('contactKakao');
     els.contactPhone = document.getElementById('contactPhone');
     els.contactEmail = document.getElementById('contactEmail');
     els.errorModeling = document.getElementById('errorModeling');
     els.errorShape = document.getElementById('errorShape');
     els.errorDims = document.getElementById('errorDims');
+    els.errorImages = document.getElementById('errorImages');
     els.errorContact = document.getElementById('errorContact');
     els.btnPrev = document.getElementById('btnPrev');
     els.btnNext = document.getElementById('btnNext');
@@ -118,10 +120,10 @@
     els.dimY.value = s.dims.y;
     els.dimZ.value = s.dims.z;
     els.description.value = s.description;
-    els.contactKakao.value = s.contact.kakao;
     els.contactPhone.value = s.contact.phone;
     els.contactEmail.value = s.contact.email;
     if (s.estimate) renderEstimatePanel(s);
+    OrderImageUpload.renderList(els.imageList);
   }
 
   function syncStateFromInputs() {
@@ -129,7 +131,6 @@
       dims: { x: els.dimX.value, y: els.dimY.value, z: els.dimZ.value },
       description: els.description.value,
       contact: {
-        kakao: els.contactKakao.value,
         phone: els.contactPhone.value,
         email: els.contactEmail.value,
       },
@@ -145,7 +146,7 @@
     OrderStepper.scrollStepperToActive(els.stepper);
     els.btnPrev.hidden = step <= 1;
     els.btnNext.textContent = step === OrderConfig.TOTAL_STEPS ? '견적 문의하기' : '다음';
-    if (step === 4) {
+    if (step === 5) {
       const state = OrderState.getState();
       const estimate = OrderValidation.computeEstimate(state);
       if (estimate) {
@@ -173,6 +174,7 @@
       modeling: els.errorModeling,
       shape: els.errorShape,
       dims: els.errorDims,
+      images: els.errorImages,
       contact: els.errorContact,
     };
     const el = map[field];
@@ -184,6 +186,7 @@
       modeling: els.errorModeling,
       shape: els.errorShape,
       dims: els.errorDims,
+      images: els.errorImages,
       contact: els.errorContact,
     };
     const el = map[field];
@@ -194,6 +197,7 @@
     clearError('modeling');
     clearError('shape');
     clearError('dims');
+    clearError('images');
     clearError('contact');
   }
 
@@ -232,9 +236,16 @@
   function submitOrder() {
     const state = OrderState.getState();
     if (!state.estimate) return;
-    els.btnNext.disabled = true;
-    Promise.resolve(OrderChannelTalk.openOrderInquiry(state))
-      .finally(() => { els.btnNext.disabled = false; });
+    const btn = els.btnNext;
+    const prevText = btn.textContent;
+    btn.textContent = '이미지 업로드 중...';
+    btn.disabled = true;
+    Promise.resolve(OrderImageUpload.submitInquiry(state))
+      .catch(() => { alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.'); })
+      .finally(() => {
+        btn.textContent = prevText;
+        btn.disabled = false;
+      });
   }
 
   function bindEvents() {
@@ -250,8 +261,18 @@
     els.description.addEventListener('input', () => {
       OrderState.setState({ description: els.description.value });
     });
-    [els.contactKakao, els.contactPhone, els.contactEmail].forEach((el, i) => {
-      const keys = ['kakao', 'phone', 'email'];
+    if (els.imageInput) {
+      els.imageInput.addEventListener('change', () => {
+        if (!els.imageInput.files || !els.imageInput.files.length) return;
+        const err = OrderImageUpload.addFiles(els.imageInput.files);
+        els.imageInput.value = '';
+        if (err) showError('images', err);
+        else clearError('images');
+        OrderImageUpload.renderList(els.imageList);
+      });
+    }
+    [els.contactPhone, els.contactEmail].forEach((el, i) => {
+      const keys = ['phone', 'email'];
       el.addEventListener('input', () => {
         OrderState.updateContact(keys[i], el.value);
         clearError('contact');
@@ -288,6 +309,7 @@
 
     resetToLanding() {
       cacheElements();
+      OrderImageUpload.clearAll();
       OrderState.resetState();
       els.shell.hidden = true;
       window.OrderLanding.showLanding();

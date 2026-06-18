@@ -54,10 +54,10 @@
       custom: { fee: 0, label: '정밀·분할 (추후 협의)' },
     },
     MOLD: {
-      lite: { fee: 150000, label: 'Lite' },
-      standard: { fee: 200000, label: 'Standard' },
-      premium: { fee: 250000, label: 'Premium' },
-      custom: { fee: 0, label: 'Custom (추후 협의)' },
+      lite: { fee: 150000 },
+      standard: { fee: 200000 },
+      premium: { fee: 250000 },
+      custom: { fee: 0 },
     },
   };
 
@@ -93,12 +93,6 @@
 
   function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
   function ceil(n, u) { return Math.ceil(n / u) * u; }
-  function formatTime(minutes) {
-    if (minutes < 60) return '약 ' + Math.max(1, Math.round(minutes)) + '분';
-    var h = Math.floor(minutes / 60), m = Math.round(minutes % 60);
-    if (m < 5) return '약 ' + h + '시간';
-    return '약 ' + h + '시간 ' + m + '분';
-  }
 
   function calcEffectiveFill(shapeKey, x, y, z, infPct) {
     var shape = SHAPES[shapeKey];
@@ -258,10 +252,6 @@
     return mc.fee + mold.fee;
   }
 
-  function getPrintRangeText(result) {
-    return fmt(result.low) + '원 ~ ' + fmt(result.high) + '원';
-  }
-
   function formatDimText(shapeKey, x, y, z) {
     var shape = SHAPES[shapeKey];
     if (!shape) return '—';
@@ -279,12 +269,7 @@
     CONFIG,
     SHAPES,
     fmt,
-    formatTime,
     estimateManual,
-    getModelingCost,
-    getMoldCost,
-    getPackageFee,
-    getPrintRangeText,
     formatDimText,
     getTotalRangeText,
   };

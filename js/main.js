@@ -953,4 +953,9 @@ window.exportClayProfile = function exportClayProfile() {
   return data;
 };
 
+window.clayStudioCapture = function clayStudioCapture() {
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png').replace(/^data:image\/\w+;base64,/, '');
+};
+
 })();
