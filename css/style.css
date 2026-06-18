@@ -27,7 +27,7 @@
   --radius: 12px;
   --radius-sm: 8px;
   --radius-pill: 999px;
-  --mobile-dock-h: clamp(188px, 34dvh, 268px);
+  --mobile-dock-h: clamp(220px, 42dvh, 288px);
   --dock-safe-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   --channel-launcher-size: 56px;
   --fs-ui: 15px;
@@ -67,7 +67,12 @@ html {
   text-size-adjust: 100%;
 }
 
-html, body {
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -78,8 +83,8 @@ html, body {
 /* ── Mobile-first shell (터치·인앱 브라우저 기본) ── */
 #app {
   width: 100%;
-  height: 100dvh;
   height: 100%;
+  height: 100dvh;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -151,10 +156,11 @@ html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
   position: static;
   width: 100%;
   min-height: 48px;
-  padding: 14px 16px;
+  padding: 13px 16px;
   font-size: 15px;
   border-radius: var(--radius-sm);
   box-shadow: none;
+  margin-top: 2px;
 }
 
 .studio-topbar {
@@ -198,8 +204,8 @@ html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
 .studio-quote-bar {
   width: 100%;
   flex: 0 0 auto;
-  order: -1;
-  padding-bottom: 2px;
+  order: 2;
+  padding-bottom: 0;
 }
 
 #hud {
@@ -440,7 +446,7 @@ html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
   gap: 6px;
   width: 100%;
   flex: 0 0 auto;
-  order: 1;
+  order: 0;
 }
 
 #bottomDock {
@@ -448,7 +454,7 @@ html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
   flex-direction: column;
   gap: 6px;
   width: 100%;
-  order: 0;
+  order: 1;
   pointer-events: auto;
 }
 

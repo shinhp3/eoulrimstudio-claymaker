@@ -65,6 +65,7 @@ body.order-landing #landingView {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
   max-width: 720px;
@@ -74,6 +75,7 @@ body.order-landing #landingView {
 
 body.order-form-page {
   overflow: hidden;
+  height: 100vh;
   height: 100dvh;
 }
 
@@ -84,6 +86,7 @@ body.order-form-page #landingView {
 body.order-form-page #orderShell {
   display: flex !important;
   flex-direction: column;
+  height: 100vh;
   height: 100dvh;
   width: 100%;
   max-width: 640px;
@@ -754,7 +757,7 @@ body.order-form-page #orderShell {
   display: flex;
   gap: 10px;
   padding: 16px 20px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
   background: var(--surface);
   border-top: 1px solid var(--surface-border);
   flex-shrink: 0;
@@ -878,10 +881,10 @@ body.order-form-page #orderShell {
 @media (max-width: 480px) {
   body.order-landing #landingView {
     justify-content: flex-start;
-    padding-top: max(20px, env(safe-area-inset-top));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-top: max(32px, env(safe-area-inset-top, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
   }
 
   .landing__header {
@@ -1035,7 +1038,7 @@ body.order-form-page #orderShell {
   .order-footer {
     gap: 8px;
     padding: 12px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 
   .order-footer .btn {
