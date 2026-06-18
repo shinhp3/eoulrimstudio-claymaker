@@ -93,7 +93,32 @@
     });
   }
 
-  function uploadBase64ToImgbb(base64) {
+  function formatUploadDate(date) {
+    var d = date || new Date();
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+  }
+
+  function formatSetNo(date) {
+    var d = date || new Date();
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return pad(d.getHours()) + pad(d.getMinutes());
+  }
+
+  function getImageExtension(file) {
+    var mime = file.type || '';
+    if (mime === 'image/png') return 'png';
+    if (mime === 'image/webp') return 'webp';
+    if (mime === 'image/gif') return 'gif';
+    return 'jpg';
+  }
+
+  function buildUploadName(date, setNo, index, file) {
+    var ext = getImageExtension(file);
+    return formatUploadDate(date) + '_' + setNo + '_' + (index + 1) + '.' + ext;
+  }
+
+  function uploadBase64ToImgbb(base64, name) {
     var apiKey = OrderConfig.IMGBB_API_KEY;
     if (!apiKey || apiKey === 'YOUR_IMGBB_API_KEY') {
       return Promise.reject(new Error('imgbb api key not configured'));
@@ -101,6 +126,7 @@
     var form = new FormData();
     form.append('key', apiKey);
     form.append('image', base64);
+    if (name) form.append('name', name);
     return fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form })
       .then(function (res) { return res.json(); })
       .then(function (json) {
@@ -115,8 +141,10 @@
       });
   }
 
-  function uploadFile(file) {
-    return compressImage(file).then(readFileAsBase64).then(uploadBase64ToImgbb);
+  function uploadFile(file, uploadName) {
+    return compressImage(file)
+      .then(readFileAsBase64)
+      .then(function (base64) { return uploadBase64ToImgbb(base64, uploadName); });
   }
   function validateFile(file) {
     if (!file) return '이미지를 선택해주세요.';
@@ -143,7 +171,12 @@
 
     uploadAll(items) {
       if (!items || !items.length) return Promise.resolve([]);
-      return Promise.all(items.map(function (item) { return uploadFile(item.file); }));
+      var uploadedAt = new Date();
+      var setNo = formatSetNo(uploadedAt);
+      return Promise.all(items.map(function (item, index) {
+        var name = buildUploadName(uploadedAt, setNo, index, item.file);
+        return uploadFile(item.file, name);
+      }));
     },
 
     addFiles(files) {
