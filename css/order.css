@@ -47,6 +47,8 @@ body {
   min-height: 100dvh;
   width: 100%;
   margin: 0;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 [hidden] {
@@ -870,4 +872,183 @@ body.order-form-page #orderShell {
 
 .image-upload__remove:hover {
   background: rgba(0, 0, 0, 0.72);
+}
+
+/* ── Mobile · 인앱 브라우저 (카카오톡·인스타) ── */
+@media (max-width: 480px) {
+  body.order-landing #landingView {
+    justify-content: flex-start;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  .landing__header {
+    margin-bottom: 24px;
+  }
+
+  .landing__title {
+    font-size: 22px;
+  }
+
+  .landing__subtitle {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .landing__cards {
+    gap: 12px;
+  }
+
+  .choice-card {
+    gap: 16px;
+    padding: 18px 16px;
+  }
+
+  .choice-card__title {
+    font-size: 17px;
+  }
+
+  .choice-card__desc {
+    font-size: 13px;
+  }
+
+  .order-header {
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .order-header__back {
+    width: 40px;
+    height: 40px;
+  }
+
+  .order-header__title {
+    font-size: 16px;
+  }
+
+  .stepper {
+    padding: 10px 8px;
+  }
+
+  .stepper__node {
+    min-width: 48px;
+    gap: 4px;
+  }
+
+  .stepper__num {
+    width: 26px;
+    height: 26px;
+    font-size: 10px;
+  }
+
+  .stepper__label {
+    font-size: 10px;
+  }
+
+  .order-main {
+    padding: 16px;
+    padding-bottom: 4px;
+  }
+
+  .step-panel__question {
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .step-panel__hint {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .step-panel__subtitle {
+    margin-top: 16px;
+  }
+
+  .step-panel__subtitle--spaced {
+    margin-top: 22px;
+  }
+
+  .tier-grid {
+    margin-top: 16px;
+    gap: 8px;
+  }
+
+  .tier-card {
+    padding: 14px;
+  }
+
+  .shape-grid {
+    gap: 8px;
+  }
+
+  .shape-btn {
+    min-height: 80px;
+    gap: 6px;
+  }
+
+  .dim-grid {
+    gap: 12px;
+  }
+
+  .text-area {
+    margin-top: 16px;
+    min-height: 120px;
+    padding: 12px 14px;
+  }
+
+  .contact-fields {
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .text-input {
+    min-height: 48px;
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  .estimate-panel {
+    padding: 16px;
+  }
+
+  .estimate-panel__total {
+    font-size: 22px;
+  }
+
+  .image-upload {
+    margin-top: 16px;
+  }
+
+  .image-upload__drop {
+    min-height: 112px;
+    padding: 18px 12px;
+  }
+
+  .image-upload__list {
+    gap: 8px;
+  }
+
+  .order-footer {
+    gap: 8px;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .order-footer .btn {
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stepper__label {
+    font-size: 9px;
+  }
+
+  .stepper__node {
+    min-width: 44px;
+  }
 }

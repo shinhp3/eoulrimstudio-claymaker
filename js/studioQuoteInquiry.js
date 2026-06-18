@@ -73,10 +73,21 @@
     });
   }
 
+  function getQuoteButtons() {
+    return [
+      document.getElementById('btnQuoteInquiry'),
+      document.getElementById('btnQuoteInquiryDesk'),
+    ].filter(Boolean);
+  }
+
+  function setQuoteButtonsDisabled(disabled) {
+    getQuoteButtons().forEach(function (btn) { btn.disabled = disabled; });
+  }
+
   function handleQuoteInquiry(btn) {
     var prevText = btn.textContent;
-    btn.textContent = '도안 준비 중...';
-    btn.disabled = true;
+    getQuoteButtons().forEach(function (b) { b.textContent = '도안 준비 중...'; });
+    setQuoteButtonsDisabled(true);
 
     captureDesignBase64()
       .then(uploadDesignImage)
@@ -85,18 +96,19 @@
         alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
       })
       .finally(function () {
-        btn.textContent = prevText;
-        btn.disabled = false;
+        getQuoteButtons().forEach(function (b) { b.textContent = prevText; });
+        setQuoteButtonsDisabled(false);
       });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('btnQuoteInquiry');
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      handleQuoteInquiry(btn);
+    getQuoteButtons().forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        handleQuoteInquiry(btn);
+      });
     });
+
     if (navigator.onLine) loadChannelSDK();
   });
 

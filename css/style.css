@@ -28,7 +28,8 @@
   --radius-sm: 8px;
   --radius-pill: 999px;
   --mobile-dock-h: clamp(188px, 34dvh, 268px);
-  --dock-safe-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  --dock-safe-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  --channel-launcher-size: 56px;
   --fs-ui: 15px;
   --fs-label: 14px;
   --fs-btn: 14px;
@@ -108,6 +109,20 @@ canvas#c {
   touch-action: none;
 }
 
+.btn-quote-inquiry {
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-quote-inquiry:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 #viewport .btn-quote-inquiry {
   position: absolute;
   right: max(12px, env(safe-area-inset-right, 0px));
@@ -125,25 +140,78 @@ canvas#c {
   cursor: pointer;
 }
 
-#viewport .btn-quote-inquiry:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+html.layout-desktop #app > .btn-quote-inquiry {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + 88px);
+  z-index: 6;
 }
 
-html:not(.layout-desktop) #viewport .btn-quote-inquiry {
-  bottom: max(52px, calc(env(safe-area-inset-bottom, 0px) + 44px));
+html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
+  position: static;
+  width: 100%;
+  min-height: 48px;
+  padding: 14px 16px;
+  font-size: 15px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.studio-topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 8px max(6px, env(safe-area-inset-left, 0px));
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+  z-index: 10;
+}
+
+.studio-topbar__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.studio-topbar__back:active {
+  background: var(--grey-100);
+}
+
+.studio-topbar__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -0.02em;
+  padding-right: 40px;
+}
+
+.studio-quote-bar {
+  width: 100%;
+  flex: 0 0 auto;
+  order: -1;
+  padding-bottom: 2px;
 }
 
 #hud {
   position: relative;
   flex: 0 0 auto;
-  max-height: min(var(--mobile-dock-h), 42dvh);
+  max-height: min(var(--mobile-dock-h), 46dvh);
   z-index: 1;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
+  gap: 8px;
+  padding: 10px max(12px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   background: var(--surface);
   border-top: 1px solid var(--surface-border);
   overflow-x: hidden;
@@ -411,7 +479,8 @@ html:not(.layout-desktop) .mobile-float #btnReset {
   left: auto;
   bottom: auto;
   z-index: 4;
-  padding: 8px 14px;
+  padding: 10px 14px;
+  min-height: 40px;
   font-size: var(--fs-btn);
   box-shadow: var(--shadow);
 }
@@ -421,12 +490,13 @@ html:not(.layout-desktop) .mobile-float #btnSizeCompareM {
   position: absolute;
   top: auto;
   right: auto;
-  bottom: 10px;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
   z-index: 4;
-  min-width: 74px;
-  padding: 8px 10px;
-  font-size: var(--fs-btn);
-  background: rgba(255, 255, 255, 0.94);
+  min-width: 72px;
+  min-height: 40px;
+  padding: 10px 10px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--surface-border);
   box-shadow: var(--shadow);
 }
@@ -436,14 +506,14 @@ html:not(.layout-desktop) .mobile-float #btnSmooth {
 }
 
 html:not(.layout-desktop) .mobile-float #btnSizeCompareM {
-  left: calc(max(12px, env(safe-area-inset-left, 0px)) + 82px);
+  left: calc(max(12px, env(safe-area-inset-left, 0px)) + 78px);
 }
 
 html:not(.layout-desktop) .mobile-float .history-btns {
   position: absolute;
   top: auto;
   left: auto;
-  bottom: 10px;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
   right: max(12px, env(safe-area-inset-right, 0px));
   z-index: 4;
   display: flex;
@@ -454,9 +524,10 @@ html:not(.layout-desktop) .mobile-float .btn-icon {
   width: auto;
   min-width: unset;
   height: auto;
-  min-height: unset;
+  min-height: 40px;
+  min-width: 40px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
@@ -479,9 +550,15 @@ html:not(.layout-desktop) .dock-presets {
   width: 100%;
 }
 
+html:not(.layout-desktop) #profileWrap {
+  max-width: min(200px, calc(100vw - 88px));
+  padding: 8px 10px;
+}
+
 html:not(.layout-desktop) #presetBtns .btn {
-  min-height: 40px;
-  padding: 10px 6px;
+  min-height: 44px;
+  padding: 11px 6px;
+  font-size: 14px;
   flex: 1 1 0;
   min-width: 0;
 }
