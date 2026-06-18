@@ -958,4 +958,12 @@ window.clayStudioCapture = function clayStudioCapture() {
   return renderer.domElement.toDataURL('image/png').replace(/^data:image\/\w+;base64,/, '');
 };
 
+window.clayStudioGetSize = function clayStudioGetSize() {
+  const { diameter, height } = getActualSize();
+  return {
+    widthCm: Math.round(diameter * 10) / 10,
+    heightCm: Math.round(height * 10) / 10,
+  };
+};
+
 })();

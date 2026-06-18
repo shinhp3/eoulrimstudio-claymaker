@@ -972,6 +972,75 @@ button.btn-studio-open:active {
   color: var(--text-muted);
 }
 
+/* ── 네이버 스마트스토어 버튼 (랜딩) ── */
+a.btn-smartstore {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  background: linear-gradient(135deg, #e8faf0 0%, var(--white) 100%);
+  border: 1.5px solid #b8ebd0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition), transform 0.1s ease;
+}
+
+.landing__cards .btn-smartstore--landing {
+  margin-top: 0;
+}
+
+a.btn-smartstore:hover {
+  border-color: #03c75a;
+  box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.12);
+}
+
+a.btn-smartstore:active {
+  transform: scale(0.99);
+}
+
+.btn-smartstore__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  color: #03c75a;
+}
+
+.btn-smartstore__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.btn-smartstore__label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #03a84e;
+  letter-spacing: -0.01em;
+}
+
+.btn-smartstore__sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.btn-smartstore__arrow {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: #03c75a;
+}
+
 /* ── 구분선 ── */
 .image-upload-divider {
   display: flex;

@@ -30,10 +30,32 @@
       });
   }
 
-  function buildQuoteMessage(imageUrl) {
-    return '안녕하세요, 아래 도안으로 견적 문의드립니다 😊\n\n'
-      + '도안 이미지: ' + imageUrl + '\n\n'
-      + '추가로 전달할 내용을 입력해주세요.';
+  function getDesignSize() {
+    if (typeof window.clayStudioGetSize === 'function') {
+      return window.clayStudioGetSize();
+    }
+    var wEl = document.getElementById('actualWidth');
+    var hEl = document.getElementById('actualHeight');
+    if (wEl && hEl) {
+      return {
+        widthCm: parseFloat(wEl.textContent) || 0,
+        heightCm: parseFloat(hEl.textContent) || 0,
+      };
+    }
+    return null;
+  }
+
+  function buildQuoteMessage(imageUrl, size) {
+    var lines = [
+      '안녕하세요, 아래 도안으로 견적 문의드립니다 😊',
+      '',
+      '도안 이미지: ' + imageUrl,
+    ];
+    if (size && size.widthCm > 0 && size.heightCm > 0) {
+      lines.push('치수: 최대 가로 ' + size.widthCm + 'cm × 높이 ' + size.heightCm + 'cm');
+    }
+    lines.push('', '추가로 전달할 내용을 입력해주세요.');
+    return lines.join('\n');
   }
 
   function ensureChannelStub() {
@@ -89,9 +111,11 @@
     getQuoteButtons().forEach(function (b) { b.textContent = '도안 준비 중...'; });
     setQuoteButtonsDisabled(true);
 
+    var size = getDesignSize();
+
     captureDesignBase64()
       .then(uploadDesignImage)
-      .then(function (url) { return openChannelWithMessage(buildQuoteMessage(url)); })
+      .then(function (url) { return openChannelWithMessage(buildQuoteMessage(url, size)); })
       .catch(function () {
         alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
       })
