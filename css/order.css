@@ -894,30 +894,46 @@ body.order-form-page #orderShell {
   display: block;
 }
 
-/* ── "3D 만들기" 버튼 ── */
-.btn-studio-open {
+/* ── Clay Studio 열기 버튼 (랜딩 · 주문 2단계 공통) ── */
+a.btn-studio-open,
+button.btn-studio-open {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
-  margin-top: 20px;
   padding: 16px 18px;
   font-family: inherit;
+  font-size: inherit;
   text-align: left;
+  text-decoration: none;
+  color: inherit;
   background: linear-gradient(135deg, var(--blue-50) 0%, var(--white) 100%);
   border: 1.5px solid var(--blue-100);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition), transform 0.1s ease;
 }
 
-.btn-studio-open:hover {
+.landing__cards .btn-studio-open--landing {
+  margin-top: 0;
+}
+
+.step-panel .btn-studio-open--landing {
+  margin-top: 16px;
+}
+
+a.btn-studio-open:hover,
+button.btn-studio-open:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
 }
 
-.btn-studio-open:active {
+a.btn-studio-open:active,
+button.btn-studio-open:active {
   transform: scale(0.99);
 }
 
