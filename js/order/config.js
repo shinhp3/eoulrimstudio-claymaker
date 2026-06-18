@@ -21,7 +21,7 @@ window.OrderConfig = {
   SHAPE_KEYS: ['cup', 'plate', 'bowl', 'etc'],
   CHANNEL_TALK_PLUGIN_KEY: '6ca8205b-492b-4f44-97fd-f8fa35026101',
   /* imgbb.com → API → 발급받은 API 키 */
-  IMGBB_API_KEY: '36694f1b8c2c3ed3aea4e38dc6017466',
+  IMGBB_API_KEY: '189b05176929b1e59e443f19e0e4455d',
   MAX_IMAGES: 5,
   MAX_IMAGE_SIZE: 10 * 1024 * 1024,
   /* 업로드 전 압축 (원본보다 가볍게) */
