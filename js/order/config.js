@@ -1,9 +1,9 @@
 window.OrderConfig = {
   STEPS: [
     { id: 1, num: '01', label: '모델링' },
-    { id: 2, num: '02', label: '형태·치수' },
+    { id: 2, num: '02', label: '이미지' },
     { id: 3, num: '03', label: '설명' },
-    { id: 4, num: '04', label: '이미지' },
+    { id: 4, num: '04', label: '형태·치수' },
     { id: 5, num: '05', label: '견적·연락' },
   ],
   MODELING_TIERS: [

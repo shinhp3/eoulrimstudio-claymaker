@@ -10,12 +10,12 @@
 <body>
 <div id="app">
   <header class="studio-topbar ui-mobile-only">
-    <a href="index.html" class="studio-topbar__back" aria-label="돌아가기">
+    <a href="index.html" class="studio-topbar__back" id="studioBackBtn" aria-label="돌아가기">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M15 18l-6-6 6-6"/>
       </svg>
     </a>
-    <h1 class="studio-topbar__title">3D 견적 확인</h1>
+    <h1 class="studio-topbar__title" id="studioTopbarTitle">3D 견적 확인</h1>
   </header>
 
   <div id="viewport">
@@ -56,6 +56,7 @@
 
   <div id="hud">
     <div class="studio-quote-bar ui-mobile-only">
+      <button type="button" class="btn btn-studio-done" id="btnStudioDone" hidden>이 도면으로 치수 입력하기</button>
       <button type="button" class="btn btn-quote-inquiry" id="btnQuoteInquiry">견적 문의하기</button>
     </div>
     <div class="brand">

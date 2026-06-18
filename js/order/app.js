@@ -5,6 +5,10 @@
   function cacheElements() {
     els.shell = document.getElementById('orderShell');
     els.landing = document.getElementById('landingView');
+    els.studioOverlay = document.getElementById('studioOverlay');
+    els.studioFrame = document.getElementById('studioFrame');
+    els.btnOpenStudio = document.getElementById('btnOpenStudio');
+    els.step4StudioHint = document.getElementById('step4StudioHint');
     els.stepper = document.getElementById('stepper');
     els.panels = document.querySelectorAll('.step-panel');
     els.tierGrid = document.getElementById('tierGrid');
@@ -213,7 +217,7 @@
       return;
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 4) {
       const estimate = OrderValidation.computeEstimate(OrderState.getState());
       OrderState.setEstimate(estimate);
     }
@@ -248,6 +252,63 @@
       });
   }
 
+  function openStudioOverlay() {
+    if (!els.studioOverlay || !els.studioFrame) return;
+    // iframe src를 지금 설정해야 매번 새로 로드됨
+    els.studioFrame.src = 'studio.html';
+    els.studioOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeStudioOverlay() {
+    if (!els.studioOverlay) return;
+    els.studioOverlay.hidden = true;
+    els.studioFrame.src = '';
+    document.body.style.overflow = '';
+  }
+
+  function dataUrlToFile(dataUrl, fileName) {
+    var arr = dataUrl.split(',');
+    var mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) return null;
+    var mime = mimeMatch[1];
+    var bstr = atob(arr[1]);
+    var n = bstr.length;
+    var u8 = new Uint8Array(n);
+    while (n--) u8[n] = bstr.charCodeAt(n);
+    return new File([u8], fileName, { type: mime });
+  }
+
+  function handleStudioComplete(data) {
+    closeStudioOverlay();
+
+    // 스크린샷을 이미지로 추가
+    if (data.screenshot) {
+      var file = dataUrlToFile(data.screenshot, 'studio_design.png');
+      if (file) {
+        var err = OrderImageUpload.addFiles([file]);
+        if (err) showError('images', err);
+        else clearError('images');
+        OrderImageUpload.renderList(els.imageList);
+      }
+    }
+
+    // 치수 자동 입력 (cm → mm)
+    if (data.widthCm && data.heightCm) {
+      var wMm = String(Math.round(data.widthCm * 10));
+      var hMm = String(Math.round(data.heightCm * 10));
+      OrderState.updateDim('x', wMm);
+      OrderState.updateDim('z', hMm);
+      if (els.dimX) els.dimX.value = wMm;
+      if (els.dimZ) els.dimZ.value = hMm;
+      // 형태가 미선택이면 'cup' 기본값 적용
+      if (!OrderState.getState().shape) {
+        selectShape('cup');
+      }
+      if (els.step4StudioHint) els.step4StudioHint.hidden = false;
+    }
+  }
+
   function bindEvents() {
     [els.dimX, els.dimY, els.dimZ].forEach(el => {
       el.addEventListener('input', () => {
@@ -278,6 +339,16 @@
         clearError('contact');
       });
     });
+    if (els.btnOpenStudio) {
+      els.btnOpenStudio.addEventListener('click', openStudioOverlay);
+    }
+
+    window.addEventListener('message', function (e) {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === 'studio-complete') handleStudioComplete(e.data);
+      if (e.data.type === 'studio-cancel') closeStudioOverlay();
+    });
+
     els.btnNext.addEventListener('click', handleNext);
     els.btnPrev.addEventListener('click', handlePrev);
     if (els.btnBackLanding) {

@@ -71,9 +71,9 @@
     validateStep(step, state) {
       switch (step) {
         case 1: return validateModeling(state);
-        case 2: return validateShapeAndDims(state);
+        case 2: return validateImages(state);
         case 3: return { valid: true, errors: {} };
-        case 4: return validateImages(state);
+        case 4: return validateShapeAndDims(state);
         case 5:
           if (!state.estimate) {
             return { valid: false, errors: { contact: '견적 정보가 없습니다. 형태·치수를 다시 확인해주세요.' } };

@@ -877,6 +877,125 @@ body.order-form-page #orderShell {
   background: rgba(0, 0, 0, 0.72);
 }
 
+/* ── Studio overlay ── */
+.studio-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-overlay__frame {
+  width: 100%;
+  flex: 1 1 auto;
+  border: none;
+  display: block;
+}
+
+/* ── "3D 만들기" 버튼 ── */
+.btn-studio-open {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px 18px;
+  font-family: inherit;
+  text-align: left;
+  background: linear-gradient(135deg, var(--blue-50) 0%, var(--white) 100%);
+  border: 1.5px solid var(--blue-100);
+  border-radius: var(--radius);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.btn-studio-open:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+}
+
+.btn-studio-open:active {
+  transform: scale(0.99);
+}
+
+.btn-studio-open__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+
+.btn-studio-open__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.btn-studio-open__label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.btn-studio-open__sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.btn-studio-open__arrow {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+/* ── 구분선 ── */
+.image-upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.image-upload-divider::before,
+.image-upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--grey-200);
+}
+
+/* ── studio 완료 버튼 (style.css 쪽 hud 안) ── */
+.btn-studio-done {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--white);
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  min-height: 48px;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+
+.btn-studio-done:active {
+  background: #1b6fe0;
+}
+
 /* ── Mobile · 인앱 브라우저 (카카오톡·인스타) ── */
 @media (max-width: 480px) {
   body.order-landing #landingView {

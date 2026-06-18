@@ -101,7 +101,52 @@
       });
   }
 
+  var isEmbed = window !== window.top;
+
+  function initEmbedMode() {
+    var topbarTitle = document.getElementById('studioTopbarTitle');
+    if (topbarTitle) topbarTitle.textContent = '3D 도면 만들기';
+
+    var doneBtnMobile = document.getElementById('btnStudioDone');
+    if (doneBtnMobile) doneBtnMobile.hidden = false;
+
+    getQuoteButtons().forEach(function (btn) { btn.hidden = true; });
+
+    // 데스크톱 견적 버튼도 숨김
+    var deskBtn = document.getElementById('btnQuoteInquiryDesk');
+    if (deskBtn) deskBtn.hidden = true;
+
+    // 뒤로가기 → 취소 메시지
+    var backBtn = document.getElementById('studioBackBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.parent.postMessage({ type: 'studio-cancel' }, '*');
+      });
+    }
+
+    // 완료 버튼 핸들러
+    function handleDone() {
+      var widthCm = parseFloat(document.getElementById('widthInput').value) || 10;
+      var heightCm = parseFloat(document.getElementById('heightInput').value) || 10;
+      var base64 = window.clayStudioCapture ? window.clayStudioCapture() : null;
+      window.parent.postMessage({
+        type: 'studio-complete',
+        widthCm: widthCm,
+        heightCm: heightCm,
+        screenshot: base64 ? 'data:image/png;base64,' + base64 : null,
+      }, '*');
+    }
+
+    if (doneBtnMobile) doneBtnMobile.addEventListener('click', handleDone);
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    if (isEmbed) {
+      initEmbedMode();
+      return;
+    }
+
     getQuoteButtons().forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -112,7 +157,7 @@
     if (navigator.onLine) loadChannelSDK();
   });
 
-  if (document.readyState !== 'loading' && navigator.onLine) {
+  if (!isEmbed && document.readyState !== 'loading' && navigator.onLine) {
     loadChannelSDK();
   }
 })();
