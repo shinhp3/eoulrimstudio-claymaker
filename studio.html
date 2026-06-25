@@ -17,6 +17,12 @@
     </a>
     <h1 class="studio-topbar__title" id="studioTopbarTitle">3D 견적 확인</h1>
   </header>
+  <a href="index.html" class="studio-back-floating ui-desktop-only" id="studioBackBtnDesk" aria-label="돌아가기">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+    <span>뒤로가기</span>
+  </a>
 
   <div id="viewport">
     <canvas id="c"></canvas>
@@ -56,8 +62,8 @@
 
   <div id="hud">
     <div class="studio-quote-bar ui-mobile-only">
-      <button type="button" class="btn btn-studio-done" id="btnStudioDone" hidden>이 도면으로 치수 입력하기</button>
-      <button type="button" class="btn btn-quote-inquiry" id="btnQuoteInquiry">견적 문의하기</button>
+      <button type="button" class="btn btn-studio-done" id="btnStudioDone" hidden>문의하기</button>
+      <button type="button" class="btn btn-studio-done" id="btnQuoteInquiry">문의하기</button>
     </div>
     <div class="brand">
       <div class="brand-name">Clay Studio</div>
@@ -91,6 +97,8 @@
               <button type="button" class="btn" id="btnSmoothDock">다듬기</button>
               <button type="button" class="btn btn-toggle" id="btnSizeCompareDock" aria-pressed="false" title="신용카드(86×54×0.76mm)로 크기 비교">크기확인</button>
               <button type="button" class="btn btn-reset" id="btnResetDesk">초기화</button>
+              <button type="button" class="btn btn-studio-done ui-desktop-only" id="btnStudioDoneDesk" hidden>문의하기</button>
+              <button type="button" class="btn btn-studio-done ui-desktop-only" id="btnQuoteInquiryDesk">문의하기</button>
             </div>
           </div>
         </div>
@@ -110,19 +118,19 @@
       <div id="heightPanel">
         <div class="panel-label">높이</div>
         <div id="vSliderWrap">
-          <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.5">
+          <input type="range" id="heightSlider" min="0.5" max="20" value="10" step="0.1">
           <div id="barDot"></div>
         </div>
         <div class="num-row">
-          <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.5">
+          <input class="num-input" type="number" id="heightInput" value="10" min="0.5" max="20" step="0.1">
           <span class="unit">cm</span>
         </div>
       </div>
       <div id="widthPanel">
         <span class="panel-label">너비</span>
-        <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.5">
+        <input type="range" id="widthSlider" min="0.5" max="20" value="10" step="0.1">
         <div class="num-row">
-          <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.5">
+          <input class="num-input" type="number" id="widthInput" value="10" min="0.5" max="20" step="0.1">
           <span class="unit">cm</span>
         </div>
       </div>
@@ -131,7 +139,6 @@
     <div id="status">준비됨</div>
   </div>
 
-  <button type="button" class="btn btn-quote-inquiry ui-desktop-only" id="btnQuoteInquiryDesk">견적 문의하기</button>
 </div>
 
 <dialog id="resetDialog" class="confirm-dialog" aria-labelledby="resetDialogTitle">
@@ -146,7 +153,7 @@
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/main.js"></script>
-<script src="js/studioQuoteInquiry.js"></script>
+<script src="js/main.js?v=20260625-imgbb-capture"></script>
+<script src="js/studioQuoteInquiry.js?v=20260625-imgbb"></script>
 </body>
 </html>

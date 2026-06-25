@@ -61,6 +61,10 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
@@ -114,55 +118,6 @@ canvas#c {
   touch-action: none;
 }
 
-.btn-quote-inquiry {
-  font-family: inherit;
-  font-weight: 600;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  cursor: pointer;
-}
-
-.btn-quote-inquiry:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-#viewport .btn-quote-inquiry {
-  position: absolute;
-  right: max(12px, env(safe-area-inset-right, 0px));
-  bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  z-index: 6;
-  padding: 12px 16px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  cursor: pointer;
-}
-
-html.layout-desktop #app > .btn-quote-inquiry {
-  position: fixed;
-  right: 20px;
-  bottom: calc(20px + 88px);
-  z-index: 6;
-}
-
-html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
-  position: static;
-  width: 100%;
-  min-height: 48px;
-  padding: 13px 16px;
-  font-size: 15px;
-  border-radius: var(--radius-sm);
-  box-shadow: none;
-  margin-top: 2px;
-}
-
 .studio-topbar {
   flex: 0 0 auto;
   display: flex;
@@ -199,6 +154,44 @@ html:not(.layout-desktop) .studio-quote-bar .btn-quote-inquiry {
   text-align: center;
   letter-spacing: -0.02em;
   padding-right: 40px;
+}
+
+.studio-back-floating {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 7;
+  min-height: 42px;
+  padding: 9px 14px 9px 12px;
+  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+
+.studio-back-floating:hover {
+  color: var(--text);
+  background: var(--white);
+  border-color: var(--grey-300);
+}
+
+.studio-back-floating svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.studio-back-floating span {
+  display: block;
+  line-height: 1;
 }
 
 .studio-quote-bar {
@@ -515,6 +508,12 @@ html:not(.layout-desktop) .mobile-float #btnSizeCompareM {
   left: calc(max(12px, env(safe-area-inset-left, 0px)) + 78px);
 }
 
+html:not(.layout-desktop) .mobile-float #btnSizeCompareM.btn-toggle-on {
+  color: var(--white);
+  background: var(--grey-900);
+  border-color: var(--grey-900);
+}
+
 html:not(.layout-desktop) .mobile-float .history-btns {
   position: absolute;
   top: auto;
@@ -651,6 +650,17 @@ html:not(.layout-desktop) #presetBtns .btn {
   border-radius: var(--radius-sm);
   white-space: nowrap;
   touch-action: manipulation;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+  border-color: var(--grey-300);
+  background: var(--grey-100);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 31, 40, 0.12);
 }
 
 .btn:active {
@@ -681,14 +691,48 @@ html:not(.layout-desktop) #presetBtns .btn {
 
 .btn-toggle-on {
   color: var(--white);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--grey-900);
+  border-color: var(--grey-900);
 }
 
 .btn-toggle-on:active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--grey-900);
+  border-color: var(--grey-900);
   color: var(--white);
+}
+
+.btn-studio-done {
+  width: auto;
+  min-width: 104px;
+  min-height: 48px;
+  padding: 13px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  background: var(--grey-900);
+  border: 1px solid var(--grey-900);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(25, 31, 40, 0.16);
+  flex: 0 0 auto;
+}
+
+.btn-studio-done:hover,
+.btn-studio-done:active {
+  color: var(--white);
+  background: var(--grey-700);
+  border-color: var(--grey-700);
+}
+
+.btn-studio-done:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.studio-quote-bar .btn-studio-done {
+  width: 100%;
 }
 
 #status.active {
@@ -783,7 +827,7 @@ html:not(.layout-desktop) #presetBtns .btn {
   html.layout-desktop .brand {
     display: block;
     position: absolute;
-    top: 20px;
+    top: 74px;
     left: 20px;
     padding: 16px 20px;
     max-width: 260px;
@@ -813,6 +857,10 @@ html:not(.layout-desktop) #presetBtns .btn {
     display: none !important;
   }
 
+  html.layout-desktop .studio-back-floating {
+    display: inline-flex !important;
+  }
+
   html.layout-desktop #bottomDock {
     position: absolute;
     bottom: 20px;
@@ -824,7 +872,7 @@ html:not(.layout-desktop) #presetBtns .btn {
     align-items: center;
     justify-content: center;
     gap: 0;
-    width: min(720px, calc(100vw - 48px));
+    width: min(860px, calc(100vw - 48px));
     padding: 12px 8px;
     background: var(--surface);
     border: 1px solid var(--surface-border);
@@ -885,7 +933,14 @@ html:not(.layout-desktop) #presetBtns .btn {
 
   html.layout-desktop .dock-block__body--actions {
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: 6px;
+  }
+
+  html.layout-desktop .dock-block__body--actions .btn-studio-done {
+    width: auto;
+    min-height: 40px;
+    padding: 9px 16px;
+    box-shadow: none;
   }
 
   html.layout-desktop .studio-dock .history-btns {
@@ -1051,4 +1106,14 @@ html:not(.layout-desktop) #widthPanel {
   flex-direction: row;
   position: static;
   transform: none;
+}
+
+[hidden],
+.ui-desktop-only[hidden],
+.ui-mobile-only[hidden],
+html.layout-desktop .ui-desktop-only[hidden],
+html.layout-desktop .ui-mobile-only[hidden],
+html:not(.layout-desktop) .ui-desktop-only[hidden],
+html:not(.layout-desktop) .ui-mobile-only[hidden] {
+  display: none !important;
 }

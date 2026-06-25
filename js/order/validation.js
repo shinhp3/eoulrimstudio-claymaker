@@ -34,11 +34,11 @@
     if (shape.useY && (y === null || Number.isNaN(y))) {
       return { valid: false, errors: { dims: '치수를 올바르게 입력해주세요.' } };
     }
-    if (x > OrderEstimate.CONFIG.MAX_DIM || z > OrderEstimate.CONFIG.MAX_DIM) {
-      return { valid: false, errors: { dims: OrderEstimate.CONFIG.MAX_DIM + 'mm 이하로 입력해주세요.' } };
-    }
-    if (shape.useY && y > OrderEstimate.CONFIG.MAX_DIM) {
-      return { valid: false, errors: { dims: OrderEstimate.CONFIG.MAX_DIM + 'mm 이하로 입력해주세요.' } };
+    const overLimit = x > OrderEstimate.CONFIG.MAX_DIM
+      || z > OrderEstimate.CONFIG.MAX_DIM
+      || (shape.useY && y > OrderEstimate.CONFIG.MAX_DIM);
+    if (overLimit && !state.overLimitConfirmed) {
+      return { valid: false, errors: { dims: OrderEstimate.CONFIG.MAX_DIM + 'mm 초과 여부를 확인해주세요.' } };
     }
     return { valid: true, errors: {} };
   }
@@ -61,6 +61,12 @@
   }
 
   function validateImages(state) {
+    if (!state.imageSource) {
+      return { valid: false, errors: { images: '참고 이미지 보유 여부를 선택해주세요.' } };
+    }
+    if (state.imageSource === 'has' && state.images.length < 1) {
+      return { valid: false, errors: { images: '참고 이미지를 업로드해주세요.' } };
+    }
     if (state.images.length > OrderConfig.MAX_IMAGES) {
       return { valid: false, errors: { images: '이미지는 최대 ' + OrderConfig.MAX_IMAGES + '장까지 첨부할 수 있습니다.' } };
     }
@@ -72,7 +78,11 @@
       switch (step) {
         case 1: return validateModeling(state);
         case 2: return validateImages(state);
-        case 3: return { valid: true, errors: {} };
+        case 3:
+          if (!state.description.trim()) {
+            return { valid: false, errors: { description: '참고사항을 입력해주세요.' } };
+          }
+          return { valid: true, errors: {} };
         case 4: return validateShapeAndDims(state);
         case 5:
           if (!state.estimate) {

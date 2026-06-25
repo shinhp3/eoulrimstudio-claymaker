@@ -51,7 +51,7 @@ scene.fog = new THREE.FogExp2(BG, 0.004);
 
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -92,7 +92,7 @@ const MIN_R = 0.05;
 const MAX_R = SIZE_MAX / 2;
 
 function clampDim(cm, min, max) {
-  return Math.max(min, Math.min(max, Math.round(cm * 2) / 2));
+  return Math.max(min, Math.min(max, Math.round(cm * 10) / 10));
 }
 
 function getActualSize() {
@@ -251,8 +251,7 @@ function applyHistoryState(snap) {
   PHT = snap.heightCm;
   lastPreset = snap.lastPreset;
   createClay();
-  syncUI();
-  updateActualSizeDisplay();
+  syncSizeControlsToActualSize();
   updateFloor();
 }
 
@@ -379,6 +378,14 @@ function updateActualSizeDisplay() {
   actualHeightEl.textContent = height.toFixed(1);
 }
 
+function syncSizeControlsToActualSize() {
+  const { diameter, height } = getActualSize();
+  widthCm = Math.max(SIZE_MIN, Math.min(W_MAX, Math.round(diameter * 10) / 10));
+  heightCm = Math.max(SIZE_MIN, Math.min(H_MAX, Math.round(height * 10) / 10));
+  PHT = heightCm;
+  syncUI();
+}
+
 function syncUI() {
   const hS = document.getElementById('heightSlider');
   const hI = document.getElementById('heightInput');
@@ -409,7 +416,7 @@ function updateClayFast() {
   updateActualSizeDisplay();
 }
 
-// Floor + cm grid (scaled to model size)
+// Floor + cm grid (fixed scale so visual size reference stays stable)
 const FLOOR_BASE = 80;
 const floor = new THREE.Mesh(
   new THREE.CircleGeometry(FLOOR_BASE, 64),
@@ -424,11 +431,8 @@ grid.position.y = 0.01;
 scene.add(grid);
 
 function updateFloor() {
-  const span = getObjectSpan();
-  const floorSize = Math.max(FLOOR_BASE, span * 5);
-  const s = floorSize / FLOOR_BASE;
-  floor.scale.set(s, 1, s);
-  grid.scale.set(s, 1, s);
+  floor.scale.set(1, 1, 1);
+  grid.scale.set(1, 1, 1);
   const y = -PHT / 2 - 0.15;
   floor.position.y = y;
   grid.position.y = y + 0.01;
@@ -470,30 +474,50 @@ function updateSizeGuide() {
   if (sizeCompareOn) updateCardComparePosition();
 }
 
-// ── 신용카드 크기 비교 (86×54mm, 세로 8.6cm) ─────────────────────────────────
-const CARD_HEIGHT_CM = 8.6;
-const CARD_WIDTH_CM = 5.4;
-const CARD_THICK_CM = 0.076;
-const CARD_GAP_CM = 1.2;
+// ── 기준 모델 크기 비교 (사용자 지정 프로파일) ───────────────────────────────
+const SIZE_COMPARE_PROFILE = [
+  { r: 2.227, y: -3.65 }, { r: 2.28, y: -3.398 }, { r: 2.334, y: -3.147 },
+  { r: 2.388, y: -2.895 }, { r: 2.441, y: -2.643 }, { r: 2.494, y: -2.391 },
+  { r: 2.547, y: -2.14 }, { r: 2.598, y: -1.888 }, { r: 2.647, y: -1.636 },
+  { r: 2.695, y: -1.384 }, { r: 2.742, y: -1.133 }, { r: 2.787, y: -0.881 },
+  { r: 2.83, y: -0.629 }, { r: 2.873, y: -0.378 }, { r: 2.915, y: -0.126 },
+  { r: 2.957, y: 0.126 }, { r: 2.999, y: 0.378 }, { r: 3.042, y: 0.629 },
+  { r: 3.085, y: 0.881 }, { r: 3.13, y: 1.133 }, { r: 3.175, y: 1.384 },
+  { r: 3.221, y: 1.636 }, { r: 3.268, y: 1.888 }, { r: 3.315, y: 2.14 },
+  { r: 3.361, y: 2.391 }, { r: 3.408, y: 2.643 }, { r: 3.454, y: 2.895 },
+  { r: 3.5, y: 3.147 }, { r: 3.545, y: 3.398 }, { r: 3.59, y: 3.65 }
+];
+const SIZE_COMPARE_HEIGHT_CM = 7.3;
+const SIZE_COMPARE_WIDTH_CM = 7.2;
+const SIZE_COMPARE_MAX_R = Math.max(...SIZE_COMPARE_PROFILE.map(p => p.r));
+const SIZE_COMPARE_MIN_Y = Math.min(...SIZE_COMPARE_PROFILE.map(p => p.y));
+const SIZE_COMPARE_GAP_CM = 1.2;
 // cardCompareGroup, sizeCompareOn — 위(updateFloor 직전)에서 선언됨
 
-function buildCreditCardMesh() {
+function buildSizeReferenceMesh() {
   const group = new THREE.Group();
-  // 카메라 정면(z축)에서 카드의 넓은 면(가로×세로)이 보이도록 z를 두께축으로 둔다.
-  const geom = new THREE.BoxGeometry(CARD_WIDTH_CM, CARD_HEIGHT_CM, CARD_THICK_CM);
-  const body = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({
-    color: 0x1e3a5f,
-    roughness: 0.38,
-    metalness: 0.22,
-    emissive: 0x0a1a30,
-    emissiveIntensity: 0.08
-  }));
+  // 주어진 단면 프로파일을 회전시켜 실제 크기 확인용 기준 모델을 만든다.
+  const geom = new THREE.LatheGeometry(SIZE_COMPARE_PROFILE.map(p => new THREE.Vector2(p.r, p.y)), SEG);
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x6b7684,
+    roughness: 0.58,
+    metalness: 0.04,
+    transparent: true,
+    opacity: 0.78
+  });
+  const body = new THREE.Mesh(geom, mat);
   body.castShadow = true;
   body.receiveShadow = true;
   group.add(body);
+  const bottom = new THREE.Mesh(new THREE.CircleGeometry(SIZE_COMPARE_PROFILE[0].r, SEG), mat.clone());
+  bottom.rotation.x = -Math.PI / 2;
+  bottom.position.y = SIZE_COMPARE_MIN_Y;
+  bottom.receiveShadow = true;
+  group.add(bottom);
   const edge = new THREE.LineSegments(
     new THREE.EdgesGeometry(geom),
-    new THREE.LineBasicMaterial({ color: 0x8b95a1, transparent: true, opacity: 0.75 })
+    new THREE.LineBasicMaterial({ color: 0x191f28, transparent: true, opacity: 0.32 })
   );
   group.add(edge);
   return group;
@@ -504,8 +528,8 @@ function updateCardComparePosition() {
   const { maxR } = getActualSize();
   const yMin = profile.reduce((m, p) => Math.min(m, p.y), Infinity);
   cardCompareGroup.position.set(
-    maxR + CARD_GAP_CM + CARD_WIDTH_CM / 2,
-    yMin + CARD_HEIGHT_CM / 2,
+    maxR + SIZE_COMPARE_GAP_CM + SIZE_COMPARE_MAX_R,
+    yMin - SIZE_COMPARE_MIN_Y,
     0
   );
 }
@@ -523,10 +547,10 @@ function updateSizeCompareButtons() {
 function setSizeCompareVisible(on) {
   sizeCompareOn = on;
   if (on) {
-    if (!cardCompareGroup) cardCompareGroup = buildCreditCardMesh();
+    if (!cardCompareGroup) cardCompareGroup = buildSizeReferenceMesh();
     updateCardComparePosition();
     scene.add(cardCompareGroup);
-    setStatus('카드 비교 8.6×5.4×0.076cm', true);
+    setStatus(`기준 모델 ${SIZE_COMPARE_WIDTH_CM}×${SIZE_COMPARE_HEIGHT_CM}cm`, true);
   } else if (cardCompareGroup) {
     scene.remove(cardCompareGroup);
     setStatus(READY_STATUS);
@@ -558,8 +582,8 @@ function getObjectSpan() {
   const { height, diameter, maxR } = getActualSize();
   let span = Math.max(height, diameter, SIZE_MIN);
   if (sizeCompareOn) {
-    const withCard = (maxR + CARD_GAP_CM + CARD_WIDTH_CM) * 2;
-    span = Math.max(span, height, CARD_HEIGHT_CM, withCard);
+    const withReference = (maxR + SIZE_COMPARE_GAP_CM + SIZE_COMPARE_MAX_R) * 2;
+    span = Math.max(span, height, SIZE_COMPARE_HEIGHT_CM, withReference);
   }
   return span;
 }
@@ -579,6 +603,15 @@ function fitCamera() {
     orbit.phi = Math.min(1.15, Math.max(0.92, orbit.phi));
     orbit.theta = 0;
   }
+  updateFloor();
+  updateCamera();
+}
+
+function updateCameraBounds() {
+  const span = getObjectSpan();
+  orbit.zoomMin = span * 1.4;
+  orbit.zoomMax = span * 15;
+  orbit.radius = Math.max(orbit.zoomMin, Math.min(orbit.zoomMax, orbit.radius));
   updateFloor();
   updateCamera();
 }
@@ -784,7 +817,7 @@ function applyEdit(idx, delta) {
     const w = Math.exp(-((i-idx)*(i-idx))/(2*sig*sig));
     p.r = Math.max(MIN_R, Math.min(MAX_R, p.r + delta*w));
   });
-  updateClayFast(); updateHighlight(); updateActualSizeDisplay();
+  updateClayFast(); updateHighlight(); syncSizeControlsToActualSize();
 }
 
 function surfaceNormalAtRing(idx, theta) {
@@ -849,7 +882,7 @@ function applyHeightChange(cm) {
   profile.forEach(p=>{ p.y *= scale; });
   PHT = newCm; heightCm = newCm;
   orbit.targetY = 0;
-  createClay(); syncUI(); fitCamera();
+  createClay(); syncUI(); updateCameraBounds();
 }
 
 function applyWidthChange(cm) {
@@ -857,7 +890,7 @@ function applyWidthChange(cm) {
   const scale = newCm / widthCm;
   profile.forEach(p=>{ p.r = Math.max(MIN_R, p.r * scale); });
   widthCm = newCm;
-  updateClayFast(); syncUI(); fitCamera();
+  updateClayFast(); syncUI(); updateCameraBounds();
 }
 
 const pctH = (v)=>((v-SIZE_MIN)/(H_MAX-SIZE_MIN)*100).toFixed(1)+'%';
@@ -895,7 +928,7 @@ function onSmoothClick() {
   pushUndoState();
   profile = refineProfile(profile, REFINE_STRENGTH);
   updateClayFast();
-  updateActualSizeDisplay();
+  syncSizeControlsToActualSize();
 }
 document.getElementById('btnSmooth').addEventListener('click', onSmoothClick);
 document.getElementById('btnSmoothDock').addEventListener('click', onSmoothClick);

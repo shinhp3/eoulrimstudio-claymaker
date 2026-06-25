@@ -85,7 +85,7 @@
       },
     },
     etc: {
-      name: '기타', labels: ['가로 (X)', '세로 (Y)', '높이 (Z)'],
+      name: '기타/오브제', labels: ['가로 (X)', '세로 (Y)', '높이 (Z)'],
       useY: true, solid: true,
       volume: function (x, y, z) { return x * y * z / 1000; },
     },

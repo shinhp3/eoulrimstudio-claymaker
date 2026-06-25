@@ -12,9 +12,9 @@
     els.stepper = document.getElementById('stepper');
     els.panels = document.querySelectorAll('.step-panel');
     els.tierGrid = document.getElementById('tierGrid');
-    els.tierResult = document.getElementById('tierResult');
-    els.tierResultTitle = document.getElementById('tierResultTitle');
-    els.tierResultDesc = document.getElementById('tierResultDesc');
+    els.imageSourceGrid = document.getElementById('imageSourceGrid');
+    els.imageUploadPanel = document.getElementById('imageUploadPanel');
+    els.noImagePanel = document.getElementById('noImagePanel');
     els.shapeGrid = document.getElementById('shapeGrid');
     els.dimGrid = document.getElementById('dimGrid');
     els.fieldY = document.getElementById('fieldY');
@@ -24,6 +24,8 @@
     els.labelX = document.getElementById('labelX');
     els.labelZ = document.getElementById('labelZ');
     els.description = document.getElementById('description');
+    els.dimOverLimitNotice = document.getElementById('dimOverLimitNotice');
+    els.dimOverLimitConfirm = document.getElementById('dimOverLimitConfirm');
     els.imageInput = document.getElementById('imageInput');
     els.imageList = document.getElementById('imageList');
     els.estimatePanel = document.getElementById('estimatePanel');
@@ -34,6 +36,7 @@
     els.errorShape = document.getElementById('errorShape');
     els.errorDims = document.getElementById('errorDims');
     els.errorImages = document.getElementById('errorImages');
+    els.errorDescription = document.getElementById('errorDescription');
     els.errorContact = document.getElementById('errorContact');
     els.btnPrev = document.getElementById('btnPrev');
     els.btnNext = document.getElementById('btnNext');
@@ -60,12 +63,20 @@
     els.tierGrid.querySelectorAll('.tier-card').forEach(card => {
       card.classList.toggle('tier-card--active', card.dataset.tierId === tierId);
     });
-    const info = OrderConfig.RECOMMEND_MAP[tierId];
-    if (info && els.tierResult) {
-      els.tierResult.hidden = false;
-      els.tierResultTitle.textContent = info.title;
-      els.tierResultDesc.textContent = info.desc;
-    }
+    updateNextButtonState();
+  }
+
+  function selectImageSource(source) {
+    OrderState.setImageSource(source);
+    clearError('images');
+    els.imageSourceGrid.querySelectorAll('.image-source-card').forEach(btn => {
+      const active = btn.dataset.imageSource === source;
+      btn.classList.toggle('image-source-card--active', active);
+      btn.setAttribute('aria-checked', String(active));
+    });
+    els.imageUploadPanel.hidden = source !== 'has';
+    els.noImagePanel.hidden = source !== 'none';
+    updateNextButtonState();
   }
 
   function initShapes() {
@@ -98,6 +109,8 @@
       btn.setAttribute('aria-checked', String(active));
     });
     applyShapeLabels(shapeKey);
+    updateOverLimitNotice();
+    updateNextButtonState();
   }
 
   function applyShapeLabels(shapeKey) {
@@ -114,11 +127,47 @@
       els.dimY.value = '';
       OrderState.updateDim('y', '');
     }
+    updateOverLimitNotice();
+  }
+
+  function hasOverLimitDims() {
+    const state = OrderState.getState();
+    const shape = OrderEstimate.SHAPES[state.shape];
+    if (!shape) return false;
+    const max = OrderEstimate.CONFIG.MAX_DIM;
+    const x = Number(state.dims.x);
+    const y = Number(state.dims.y);
+    const z = Number(state.dims.z);
+    return (Number.isFinite(x) && x > max)
+      || (Number.isFinite(z) && z > max)
+      || (shape.useY && Number.isFinite(y) && y > max);
+  }
+
+  function updateOverLimitNotice() {
+    if (!els.dimOverLimitNotice || !els.dimOverLimitConfirm) return;
+    const overLimit = hasOverLimitDims();
+    els.dimOverLimitNotice.hidden = !overLimit;
+    if (!overLimit) {
+      els.dimOverLimitConfirm.checked = false;
+      OrderState.setOverLimitConfirmed(false);
+    } else {
+      els.dimOverLimitConfirm.checked = Boolean(OrderState.getState().overLimitConfirmed);
+    }
+  }
+
+  function updateNextButtonState() {
+    if (!els.btnNext) return;
+    syncStateFromInputs();
+    updateOverLimitNotice();
+    const state = OrderState.getState();
+    const result = OrderValidation.validateStep(state.currentStep, state);
+    els.btnNext.disabled = !result.valid;
   }
 
   function syncFormFromState() {
     const s = OrderState.getState();
     if (s.modelingTier) selectTier(s.modelingTier);
+    if (s.imageSource) selectImageSource(s.imageSource);
     if (s.shape) selectShape(s.shape);
     els.dimX.value = s.dims.x;
     els.dimY.value = s.dims.y;
@@ -126,6 +175,8 @@
     els.description.value = s.description;
     els.contactPhone.value = s.contact.phone;
     els.contactEmail.value = s.contact.email;
+    if (els.dimOverLimitConfirm) els.dimOverLimitConfirm.checked = Boolean(s.overLimitConfirmed);
+    updateOverLimitNotice();
     if (s.estimate) renderEstimatePanel(s);
     OrderImageUpload.renderList(els.imageList);
   }
@@ -158,6 +209,7 @@
         renderEstimatePanel(OrderState.getState());
       }
     }
+    updateNextButtonState();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -179,6 +231,7 @@
       shape: els.errorShape,
       dims: els.errorDims,
       images: els.errorImages,
+      description: els.errorDescription,
       contact: els.errorContact,
     };
     const el = map[field];
@@ -191,6 +244,7 @@
       shape: els.errorShape,
       dims: els.errorDims,
       images: els.errorImages,
+      description: els.errorDescription,
       contact: els.errorContact,
     };
     const el = map[field];
@@ -202,6 +256,7 @@
     clearError('shape');
     clearError('dims');
     clearError('images');
+    clearError('description');
     clearError('contact');
   }
 
@@ -248,14 +303,14 @@
       .catch(() => { alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.'); })
       .finally(() => {
         btn.textContent = prevText;
-        btn.disabled = false;
+        updateNextButtonState();
       });
   }
 
   function openStudioOverlay() {
     if (!els.studioOverlay || !els.studioFrame) return;
     // iframe src를 지금 설정해야 매번 새로 로드됨
-    els.studioFrame.src = 'studio.html';
+    els.studioFrame.src = 'studio.html?embed=1&v=' + Date.now();
     els.studioOverlay.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -284,6 +339,7 @@
 
     // 스크린샷을 이미지로 추가
     if (data.screenshot) {
+      selectImageSource('has');
       var file = dataUrlToFile(data.screenshot, 'studio_design.png');
       if (file) {
         var err = OrderImageUpload.addFiles([file]);
@@ -291,6 +347,8 @@
         else clearError('images');
         OrderImageUpload.renderList(els.imageList);
       }
+    } else if (!OrderState.getState().imageSource) {
+      selectImageSource('none');
     }
 
     // 치수 자동 입력 (cm → mm)
@@ -307,6 +365,8 @@
       }
       if (els.step4StudioHint) els.step4StudioHint.hidden = false;
     }
+    updateOverLimitNotice();
+    updateNextButtonState();
   }
 
   function bindEvents() {
@@ -317,10 +377,14 @@
         if (val !== '' && Number(val) <= 0) { el.value = ''; val = ''; }
         OrderState.updateDim(key, val);
         clearError('dims');
+        updateOverLimitNotice();
+        updateNextButtonState();
       });
     });
     els.description.addEventListener('input', () => {
       OrderState.setState({ description: els.description.value });
+      clearError('description');
+      updateNextButtonState();
     });
     if (els.imageInput) {
       els.imageInput.addEventListener('change', () => {
@@ -330,15 +394,33 @@
         if (err) showError('images', err);
         else clearError('images');
         OrderImageUpload.renderList(els.imageList);
+        updateNextButtonState();
       });
     }
+    document.addEventListener('order-images-changed', () => {
+      clearError('images');
+      updateNextButtonState();
+    });
     [els.contactPhone, els.contactEmail].forEach((el, i) => {
       const keys = ['phone', 'email'];
       el.addEventListener('input', () => {
         OrderState.updateContact(keys[i], el.value);
         clearError('contact');
+        updateNextButtonState();
       });
     });
+    if (els.imageSourceGrid) {
+      els.imageSourceGrid.querySelectorAll('.image-source-card').forEach(btn => {
+        btn.addEventListener('click', () => selectImageSource(btn.dataset.imageSource));
+      });
+    }
+    if (els.dimOverLimitConfirm) {
+      els.dimOverLimitConfirm.addEventListener('change', () => {
+        OrderState.setOverLimitConfirmed(els.dimOverLimitConfirm.checked);
+        clearError('dims');
+        updateNextButtonState();
+      });
+    }
     if (els.btnOpenStudio) {
       els.btnOpenStudio.addEventListener('click', openStudioOverlay);
     }

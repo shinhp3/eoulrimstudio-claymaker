@@ -8,9 +8,9 @@
   --grey-600: #6b7684;
   --grey-700: #4e5968;
   --grey-900: #191f28;
-  --blue-50: #e8f3ff;
-  --blue-100: #c9e2ff;
-  --blue-500: #3182f6;
+  --blue-50: #f2f4f6;
+  --blue-100: #d1d6db;
+  --blue-500: #191f28;
   --bg: var(--grey-50);
   --surface: var(--white);
   --surface-border: var(--grey-200);
@@ -68,7 +68,7 @@ body.order-landing #landingView {
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-  max-width: 720px;
+  max-width: 980px;
   margin: 0 auto;
   padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
 }
@@ -129,13 +129,13 @@ body.order-form-page #orderShell {
 }
 
 .btn-primary:hover {
-  background: #1b6fe0;
-  border-color: #1b6fe0;
+  background: var(--grey-700);
+  border-color: var(--grey-700);
 }
 
 .btn-primary:active {
-  background: #1565d8;
-  border-color: #1565d8;
+  background: var(--grey-900);
+  border-color: var(--grey-900);
 }
 
 .btn:disabled {
@@ -151,9 +151,9 @@ body.order-form-page #orderShell {
 }
 
 .landing__cards {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
   width: 100%;
 }
 
@@ -182,8 +182,9 @@ body.order-form-page #orderShell {
 .choice-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
+  gap: 18px;
+  min-height: 184px;
+  padding: 22px;
   background: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius);
@@ -192,8 +193,8 @@ body.order-form-page #orderShell {
 }
 
 .choice-card--primary {
-  border-color: var(--blue-100);
-  background: linear-gradient(180deg, var(--white) 0%, var(--blue-50) 100%);
+  border-color: var(--grey-900);
+  background: var(--white);
 }
 
 .choice-card__title {
@@ -219,12 +220,11 @@ body.order-form-page #orderShell {
 
 @media (min-width: 640px) {
   .landing__cards {
-    flex-direction: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
   }
 
   .choice-card {
-    flex: 1;
     justify-content: space-between;
   }
 }
@@ -483,7 +483,7 @@ body.order-form-page #orderShell {
 .tier-card--active {
   border-color: var(--accent);
   background: var(--blue-50);
-  box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.12);
+  box-shadow: 0 0 0 3px rgba(25, 31, 40, 0.12);
 }
 
 .tier-card--active .tier-card__title {
@@ -610,6 +610,41 @@ body.order-form-page #orderShell {
   font-size: var(--fs-caption);
   font-weight: 500;
   color: var(--text-muted);
+}
+
+.dim-over-limit {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--grey-50);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-sm);
+}
+
+.dim-over-limit__text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.dim-over-limit__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.dim-over-limit__check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
 }
 
 /* ── Estimate panel ── */
@@ -774,6 +809,69 @@ body.order-form-page #orderShell {
 }
 
 /* ── Image upload ── */
+.image-source-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (min-width: 520px) {
+  .image-source-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.image-source-card {
+  width: 100%;
+  min-height: 96px;
+  padding: 16px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--surface-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+
+.image-source-card:hover {
+  border-color: var(--grey-300);
+  background: var(--grey-50);
+}
+
+.image-source-card--active {
+  border-color: var(--accent);
+  background: var(--grey-50);
+}
+
+.image-source-card__title,
+.image-source-card__desc {
+  display: block;
+}
+
+.image-source-card__title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.image-source-card__desc {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.image-source-panel {
+  margin-top: 16px;
+}
+
+.image-source-panel .image-upload {
+  margin-top: 0;
+}
+
 .image-upload {
   margin-top: 20px;
 }
@@ -929,7 +1027,7 @@ button.btn-studio-open {
 a.btn-studio-open:hover,
 button.btn-studio-open:hover {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(25, 31, 40, 0.1);
 }
 
 a.btn-studio-open:active,
@@ -984,8 +1082,8 @@ a.btn-smartstore {
   text-align: left;
   text-decoration: none;
   color: inherit;
-  background: linear-gradient(135deg, #e8faf0 0%, var(--white) 100%);
-  border: 1.5px solid #b8ebd0;
+  background: linear-gradient(135deg, var(--grey-100) 0%, var(--white) 100%);
+  border: 1.5px solid var(--grey-300);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   cursor: pointer;
@@ -998,8 +1096,8 @@ a.btn-smartstore {
 }
 
 a.btn-smartstore:hover {
-  border-color: #03c75a;
-  box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(25, 31, 40, 0.12);
 }
 
 a.btn-smartstore:active {
@@ -1010,7 +1108,8 @@ a.btn-smartstore:active {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  color: #03c75a;
+  object-fit: contain;
+  display: block;
 }
 
 .btn-smartstore__text {
@@ -1024,7 +1123,7 @@ a.btn-smartstore:active {
 .btn-smartstore__label {
   font-size: 15px;
   font-weight: 700;
-  color: #03a84e;
+  color: var(--text);
   letter-spacing: -0.01em;
 }
 
@@ -1038,7 +1137,7 @@ a.btn-smartstore:active {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  color: #03c75a;
+  color: var(--accent);
 }
 
 /* ── 구분선 ── */
@@ -1078,7 +1177,7 @@ a.btn-smartstore:active {
 }
 
 .btn-studio-done:active {
-  background: #1b6fe0;
+  background: var(--grey-700);
 }
 
 /* ── Mobile · 인앱 브라우저 (카카오톡·인스타) ── */
@@ -1111,6 +1210,7 @@ a.btn-smartstore:active {
 
   .choice-card {
     gap: 16px;
+    min-height: 0;
     padding: 18px 16px;
   }
 

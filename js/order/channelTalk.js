@@ -13,6 +13,9 @@
       const z = parseFloat(state.dims.z) || 0;
       if (x > 0 && z > 0) {
         lines.push('- 치수: ' + OrderEstimate.formatDimText(state.shape, x, y, z));
+        if (state.overLimitConfirmed) {
+          lines.push('- 240mm 초과 확인: 예');
+        }
       }
     }
     lines.push('- 소재·채움: PLA · ' + OrderEstimate.FIXED_INFILL + '% infill (참고)');

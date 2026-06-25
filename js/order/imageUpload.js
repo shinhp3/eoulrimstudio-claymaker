@@ -202,6 +202,7 @@
       });
 
       OrderState.setImages(images);
+      document.dispatchEvent(new CustomEvent('order-images-changed'));
       return errors[0] || null;
     },
 
@@ -212,11 +213,13 @@
         return item.id !== id;
       });
       OrderState.setImages(images);
+      document.dispatchEvent(new CustomEvent('order-images-changed'));
     },
 
     clearAll() {
       OrderState.getState().images.forEach(revokePreview);
       OrderState.setImages([]);
+      document.dispatchEvent(new CustomEvent('order-images-changed'));
     },
 
     renderList(container) {

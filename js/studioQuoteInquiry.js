@@ -1,5 +1,5 @@
 (function () {
-  var UPLOAD_URL = 'https://eoulrimstudio-upload.eoulrimstudio.workers.dev/upload-image';
+  var IMGBB_API_KEY = '189b05176929b1e59e443f19e0e4455d';
   var CHANNEL_KEY = '6ca8205b-492b-4f44-97fd-f8fa35026101';
 
   function captureDesignBase64() {
@@ -12,21 +12,24 @@
   }
 
   function uploadDesignImage(base64) {
-    return fetch(UPLOAD_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: base64,
-        name: 'quote_' + Date.now(),
-      }),
-    })
-      .then(function (res) {
-        if (!res.ok) throw new Error('upload failed');
-        return res.json();
-      })
+    if (!IMGBB_API_KEY || IMGBB_API_KEY === 'YOUR_IMGBB_API_KEY') {
+      return Promise.reject(new Error('imgbb api key not configured'));
+    }
+    var form = new FormData();
+    form.append('key', IMGBB_API_KEY);
+    form.append('image', base64);
+    form.append('name', 'studio_quote_' + Date.now());
+    return fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form })
+      .then(function (res) { return res.json(); })
       .then(function (json) {
-        if (!json || !json.url) throw new Error('upload failed');
-        return json.url;
+        if (!json.success || !json.data) {
+          throw new Error((json.error && json.error.message) || 'imgbb upload failed');
+        }
+        var directUrl = json.data.display_url
+          || (json.data.image && json.data.image.url)
+          || json.data.url;
+        if (!directUrl) throw new Error('imgbb upload failed');
+        return directUrl;
       });
   }
 
@@ -106,6 +109,20 @@
     getQuoteButtons().forEach(function (btn) { btn.disabled = disabled; });
   }
 
+  function getStudioDoneButtons() {
+    return [
+      document.getElementById('btnStudioDone'),
+      document.getElementById('btnStudioDoneDesk'),
+    ].filter(Boolean);
+  }
+
+  function getBackButtons() {
+    return [
+      document.getElementById('studioBackBtn'),
+      document.getElementById('studioBackBtnDesk'),
+    ].filter(Boolean);
+  }
+
   function handleQuoteInquiry(btn) {
     var prevText = btn.textContent;
     getQuoteButtons().forEach(function (b) { b.textContent = '도안 준비 중...'; });
@@ -116,7 +133,8 @@
     captureDesignBase64()
       .then(uploadDesignImage)
       .then(function (url) { return openChannelWithMessage(buildQuoteMessage(url, size)); })
-      .catch(function () {
+      .catch(function (err) {
+        console.error('Clay Studio quote inquiry failed:', err);
         alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
       })
       .finally(function () {
@@ -131,8 +149,11 @@
     var topbarTitle = document.getElementById('studioTopbarTitle');
     if (topbarTitle) topbarTitle.textContent = '3D 도면 만들기';
 
-    var doneBtnMobile = document.getElementById('btnStudioDone');
-    if (doneBtnMobile) doneBtnMobile.hidden = false;
+    var doneButtons = getStudioDoneButtons();
+    doneButtons.forEach(function (btn) {
+      btn.hidden = false;
+      btn.textContent = '문의하기';
+    });
 
     getQuoteButtons().forEach(function (btn) { btn.hidden = true; });
 
@@ -141,13 +162,12 @@
     if (deskBtn) deskBtn.hidden = true;
 
     // 뒤로가기 → 취소 메시지
-    var backBtn = document.getElementById('studioBackBtn');
-    if (backBtn) {
+    getBackButtons().forEach(function (backBtn) {
       backBtn.addEventListener('click', function (e) {
         e.preventDefault();
         window.parent.postMessage({ type: 'studio-cancel' }, '*');
       });
-    }
+    });
 
     // 완료 버튼 핸들러
     function handleDone() {
@@ -162,7 +182,9 @@
       }, '*');
     }
 
-    if (doneBtnMobile) doneBtnMobile.addEventListener('click', handleDone);
+    doneButtons.forEach(function (btn) {
+      btn.addEventListener('click', handleDone);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
