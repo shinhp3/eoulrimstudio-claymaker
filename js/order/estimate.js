@@ -53,13 +53,6 @@
       premium: { fee: 150000, label: '복잡한 외형' },
       custom: { fee: 0, label: '정밀·분할 (추후 협의)' },
     },
-    MOLD: {
-      lite: { fee: 150000 },
-      standard: { fee: 200000 },
-      premium: { fee: 250000 },
-      custom: { fee: 0 },
-    },
-    MOLD_PER_PIECE_FEE: 50000,
   };
 
   var SHAPES = {
@@ -242,17 +235,6 @@
     return CONFIG.MODELING[tier] || CONFIG.MODELING.lite;
   }
 
-  function getMoldCost(tier) {
-    return CONFIG.MOLD[tier] || CONFIG.MOLD.lite;
-  }
-
-  function getPackageFee(tier) {
-    if (tier === 'custom') return null;
-    var mc = getModelingCost(tier);
-    var mold = getMoldCost(tier);
-    return mc.fee + mold.fee;
-  }
-
   function formatDimText(shapeKey, x, y, z) {
     var shape = SHAPES[shapeKey];
     if (!shape) return '—';
@@ -269,21 +251,13 @@
     return '피스당 5만원';
   }
 
-  function getTotalRangeText(result, tier) {
-    if (tier === 'custom') return '추후 협의';
-    var packageFee = getPackageFee(tier);
-    return fmt(packageFee + result.low) + '원 ~ ' + fmt(packageFee + result.high) + '원';
-  }
-
   window.OrderEstimate = {
     FIXED_INFILL: 5,
     CONFIG,
     SHAPES,
-    fmt,
     estimateManual,
     formatDimText,
     getModelingFeeText,
     getMoldPerPieceText,
-    getTotalRangeText,
   };
 })();

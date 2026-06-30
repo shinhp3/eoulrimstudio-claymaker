@@ -164,9 +164,4 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
-
-  window.ClayStudioTutorial = {
-    open: openTutorial,
-    close: closeTutorial,
-  };
 })();

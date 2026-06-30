@@ -1077,28 +1077,6 @@ function animate() {
 }
 animate();
 
-// 개발자 도구(F12) 콘솔: exportClayProfile() → JSON 복사
-window.exportClayProfile = function exportClayProfile() {
-  const data = {
-    lastPreset,
-    widthCm,
-    heightCm,
-    profile: profile.map(p => ({
-      r: Math.round(p.r * 1000) / 1000,
-      y: Math.round(p.y * 1000) / 1000
-    }))
-  };
-  const json = JSON.stringify(data, null, 2);
-  console.log(json);
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(json).then(
-      () => console.log('클립보드에 복사됨'),
-      () => console.log('복사 실패 — 위 JSON을 직접 복사하세요')
-    );
-  }
-  return data;
-};
-
 window.clayStudioCaptureApi = {
   scene,
   getClayCaptureSpan,
@@ -1134,14 +1112,6 @@ window.clayStudioCaptureApi = {
     toneMappingExposure: 1.45,
     pixelRatio: Math.min(devicePixelRatio, 2),
   },
-};
-
-window.clayStudioGetColor = function clayStudioGetColor() {
-  return clayColorHex;
-};
-
-window.clayStudioSetColor = function clayStudioSetColor(hex) {
-  setClayColor(hex);
 };
 
 window.clayStudioCapture = function clayStudioCapture() {

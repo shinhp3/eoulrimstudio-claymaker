@@ -55,7 +55,7 @@ body {
   display: none !important;
 }
 
-/* ── View switching (landing / form / complete) ── */
+/* ── View switching (landing / form) ── */
 body.order-landing #orderShell {
   display: none !important;
 }
@@ -1443,46 +1443,6 @@ a.btn-smartstore:active {
   width: 18px;
   height: 18px;
   color: var(--accent);
-}
-
-/* ── 구분선 ── */
-.image-upload-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.image-upload-divider::before,
-.image-upload-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--grey-200);
-}
-
-/* ── studio 완료 버튼 (style.css 쪽 hud 안) ── */
-.btn-studio-done {
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--white);
-  background: var(--accent);
-  border: none;
-  cursor: pointer;
-  width: 100%;
-  min-height: 48px;
-  padding: 13px 16px;
-  border-radius: var(--radius-sm);
-  touch-action: manipulation;
-  transition: background 0.15s ease;
-}
-
-.btn-studio-done:active {
-  background: var(--grey-700);
 }
 
 /* ── Mobile · 인앱 브라우저 (카카오톡·인스타) ── */

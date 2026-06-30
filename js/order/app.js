@@ -256,7 +256,6 @@
     const r = state.estimate;
     if (!r || !els.estimatePanel) return;
     const tier = state.modelingTier;
-    const isCustom = tier === 'custom';
 
     els.estimateTotal.textContent = OrderEstimate.getModelingFeeText(tier);
     if (els.estimateMoldNote) {

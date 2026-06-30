@@ -187,10 +187,6 @@
     if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
   }
 
-  function hasLoadingImages(images) {
-    return (images || []).some(function (item) { return item.loading; });
-  }
-
   function getReadyImages(images) {
     return (images || []).filter(function (item) {
       return !item.loading && item.file;
