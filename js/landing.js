@@ -8,7 +8,7 @@
 
     document.body.classList.remove('order-form-page');
     document.body.classList.add('order-landing');
-    document.title = '도자기 석고몰드 주문제작';
+    document.title = '어울림 서비스';
 
     if (location.hash) {
       history.replaceState(null, '', location.pathname + location.search);
