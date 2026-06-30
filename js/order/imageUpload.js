@@ -1,17 +1,28 @@
 (function () {
   var ACCEPT = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-  function getCompressOptions() {
-    return {
+  function getCompressOptions(overrides) {
+    var base = {
       enabled: OrderConfig.IMAGE_COMPRESS_ENABLED !== false,
       maxSize: OrderConfig.IMAGE_COMPRESS_MAX_SIZE || 1600,
       quality: OrderConfig.IMAGE_COMPRESS_QUALITY != null ? OrderConfig.IMAGE_COMPRESS_QUALITY : 0.82,
       minBytes: OrderConfig.IMAGE_COMPRESS_MIN_BYTES || 300 * 1024,
+      preferSmaller: false,
     };
+    return Object.assign(base, overrides || {});
   }
 
-  function compressImage(file) {
-    var opts = getCompressOptions();
+  function getPreviewCompressOptions() {
+    return getCompressOptions({
+      maxSize: OrderConfig.IMAGE_PREVIEW_MAX_SIZE || 480,
+      quality: OrderConfig.IMAGE_PREVIEW_QUALITY != null ? OrderConfig.IMAGE_PREVIEW_QUALITY : 0.8,
+      minBytes: 0,
+      preferSmaller: true,
+    });
+  }
+
+  function compressImage(file, overrides) {
+    var opts = overrides ? getCompressOptions(overrides) : getCompressOptions();
     if (!opts.enabled || file.type === 'image/gif' || file.size <= opts.minBytes) {
       return Promise.resolve(file);
     }
@@ -30,6 +41,7 @@
         }
 
         var scale = Math.min(1, opts.maxSize / w, opts.maxSize / h);
+        var didScale = scale < 1;
         var cw = Math.max(1, Math.round(w * scale));
         var ch = Math.max(1, Math.round(h * scale));
         var canvas = document.createElement('canvas');
@@ -43,7 +55,17 @@
         ctx.drawImage(img, 0, 0, cw, ch);
 
         function finish(blob, mime) {
-          if (!blob || blob.size >= file.size * 0.92) {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          if (opts.preferSmaller && didScale) {
+            var extScaled = mime === 'image/webp' ? '.webp' : '.jpg';
+            var baseNameScaled = (file.name || 'image').replace(/\.[^.]+$/, '');
+            resolve(new File([blob], baseNameScaled + extScaled, { type: mime, lastModified: Date.now() }));
+            return;
+          }
+          if (blob.size >= file.size * 0.92) {
             resolve(file);
             return;
           }
@@ -54,7 +76,7 @@
 
         if (file.type === 'image/png') {
           canvas.toBlob(function (webpBlob) {
-            if (webpBlob && webpBlob.size < file.size) {
+            if (webpBlob && (opts.preferSmaller && didScale || webpBlob.size < file.size)) {
               finish(webpBlob, 'image/webp');
             } else {
               canvas.toBlob(function (jpegBlob) {
@@ -165,15 +187,34 @@
     if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
   }
 
+  function hasLoadingImages(images) {
+    return (images || []).some(function (item) { return item.loading; });
+  }
+
+  function getReadyImages(images) {
+    return (images || []).filter(function (item) {
+      return !item.loading && item.file;
+    });
+  }
+
+  function createPreviewFromFile(file) {
+    return compressImage(file, getPreviewCompressOptions()).then(function (previewFile) {
+      return URL.createObjectURL(previewFile);
+    }).catch(function () {
+      return URL.createObjectURL(file);
+    });
+  }
+
   window.OrderImageUpload = {
     validateFile,
     uploadFile,
 
     uploadAll(items) {
-      if (!items || !items.length) return Promise.resolve([]);
+      var ready = getReadyImages(items);
+      if (!ready.length) return Promise.resolve([]);
       var uploadedAt = new Date();
       var setNo = formatSetNo(uploadedAt);
-      return Promise.all(items.map(function (item, index) {
+      return Promise.all(ready.map(function (item, index) {
         var name = buildUploadName(uploadedAt, setNo, index, item.file);
         return uploadFile(item.file, name);
       }));
@@ -183,9 +224,10 @@
       var state = OrderState.getState();
       var images = state.images.slice();
       var errors = [];
+      var pending = [];
 
       Array.from(files).forEach(function (file) {
-        if (images.length >= OrderConfig.MAX_IMAGES) {
+        if (images.length + pending.length >= OrderConfig.MAX_IMAGES) {
           errors.push('이미지는 최대 ' + OrderConfig.MAX_IMAGES + '장까지 첨부할 수 있습니다.');
           return;
         }
@@ -194,16 +236,60 @@
           errors.push(err);
           return;
         }
-        images.push({
+        pending.push({
           id: createId(),
           file: file,
-          previewUrl: URL.createObjectURL(file),
+          previewUrl: null,
+          loading: true,
         });
       });
 
+      if (!pending.length) {
+        return Promise.resolve(errors[0] || null);
+      }
+
+      images = images.concat(pending);
       OrderState.setImages(images);
       document.dispatchEvent(new CustomEvent('order-images-changed'));
-      return errors[0] || null;
+
+      return Promise.all(pending.map(function (item) {
+        return createPreviewFromFile(item.file).then(function (previewUrl) {
+          return {
+            id: item.id,
+            previewUrl: previewUrl,
+          };
+        });
+      })).then(function (results) {
+        var current = OrderState.getState().images.slice();
+        results.forEach(function (result) {
+          var idx = current.findIndex(function (img) { return img.id === result.id; });
+          if (idx === -1) return;
+          current[idx] = {
+            id: current[idx].id,
+            file: current[idx].file,
+            previewUrl: result.previewUrl,
+            loading: false,
+          };
+        });
+        OrderState.setImages(current);
+        document.dispatchEvent(new CustomEvent('order-images-changed'));
+        return errors[0] || null;
+      }).catch(function () {
+        var current = OrderState.getState().images.slice();
+        pending.forEach(function (item) {
+          var idx = current.findIndex(function (img) { return img.id === item.id; });
+          if (idx === -1) return;
+          current[idx] = {
+            id: current[idx].id,
+            file: current[idx].file,
+            previewUrl: URL.createObjectURL(item.file),
+            loading: false,
+          };
+        });
+        OrderState.setImages(current);
+        document.dispatchEvent(new CustomEvent('order-images-changed'));
+        return errors[0] || null;
+      });
     },
 
     removeImage(id) {
@@ -229,10 +315,16 @@
 
       images.forEach(function (item) {
         var card = document.createElement('div');
-        card.className = 'image-upload__item';
-        card.innerHTML = '<img class="image-upload__thumb" alt="" src="' + item.previewUrl + '">'
-          + '<button type="button" class="image-upload__remove" aria-label="이미지 삭제">&times;</button>';
+        card.className = 'image-upload__item' + (item.loading ? ' image-upload__item--loading' : '');
+        if (item.loading) {
+          card.innerHTML = '<span class="image-upload__loading" aria-hidden="true"></span>'
+            + '<button type="button" class="image-upload__remove" aria-label="이미지 삭제" disabled>&times;</button>';
+        } else {
+          card.innerHTML = '<img class="image-upload__thumb" alt="" src="' + item.previewUrl + '">'
+            + '<button type="button" class="image-upload__remove" aria-label="이미지 삭제">&times;</button>';
+        }
         card.querySelector('.image-upload__remove').addEventListener('click', function () {
+          if (item.loading) return;
           OrderImageUpload.removeImage(item.id);
           OrderImageUpload.renderList(container);
         });
@@ -246,7 +338,7 @@
     },
 
     submitInquiry(state) {
-      var images = state.images || [];
+      var images = getReadyImages(state.images || []);
       if (!images.length) {
         return OrderChannelTalk.openOrderInquiry(state, null);
       }

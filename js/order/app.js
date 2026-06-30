@@ -1,5 +1,6 @@
 (function () {
   let initialized = false;
+  const ESTIMATE_NOTICE_KEY = 'clayOrderEstimateNoticeSeen';
   const els = {};
 
   function cacheElements() {
@@ -30,6 +31,7 @@
     els.imageList = document.getElementById('imageList');
     els.estimatePanel = document.getElementById('estimatePanel');
     els.estimateTotal = document.getElementById('estimateTotal');
+    els.estimateMoldNote = document.getElementById('estimateMoldNote');
     els.contactPhone = document.getElementById('contactPhone');
     els.contactEmail = document.getElementById('contactEmail');
     els.errorModeling = document.getElementById('errorModeling');
@@ -41,6 +43,40 @@
     els.btnPrev = document.getElementById('btnPrev');
     els.btnNext = document.getElementById('btnNext');
     els.btnBackLanding = document.getElementById('btnBackLanding');
+    els.btnOrderHelp = document.getElementById('btnOrderHelp');
+    els.estimateNoticeDialog = document.getElementById('estimateNoticeDialog');
+    els.estimateNoticeConfirm = document.getElementById('estimateNoticeConfirm');
+  }
+
+  function openEstimateNotice(force) {
+    if (!els.estimateNoticeDialog) return;
+    if (!force) {
+      try {
+        if (localStorage.getItem(ESTIMATE_NOTICE_KEY) === '1') return;
+      } catch (e) { /* ignore */ }
+    }
+    if (typeof els.estimateNoticeDialog.showModal === 'function') {
+      els.estimateNoticeDialog.showModal();
+    }
+  }
+
+  function showEstimateNotice() {
+    openEstimateNotice(false);
+  }
+
+  function bindEstimateNotice() {
+    if (!els.estimateNoticeDialog) return;
+    if (els.btnOrderHelp) {
+      els.btnOrderHelp.addEventListener('click', () => openEstimateNotice(true));
+    }
+    if (els.estimateNoticeConfirm) {
+      els.estimateNoticeConfirm.addEventListener('click', () => {
+        try {
+          localStorage.setItem(ESTIMATE_NOTICE_KEY, '1');
+        } catch (e) { /* ignore */ }
+        els.estimateNoticeDialog.close();
+      });
+    }
   }
 
   function initTiers() {
@@ -50,8 +86,11 @@
       btn.type = 'button';
       btn.className = 'tier-card';
       btn.dataset.tierId = tier.id;
-      btn.innerHTML = '<span class="tier-card__title">' + tier.title + '</span>'
-        + '<span class="tier-card__desc">' + tier.desc + '</span>';
+      btn.innerHTML = '<span class="tier-card__body">'
+        + '<span class="tier-card__title">' + tier.title + '</span>'
+        + '<span class="tier-card__desc">' + tier.desc + '</span>'
+        + '</span>'
+        + '<span class="tier-card__price">' + OrderEstimate.getModelingFeeText(tier.id) + '</span>';
       btn.addEventListener('click', () => selectTier(tier.id));
       els.tierGrid.appendChild(btn);
     });
@@ -219,9 +258,10 @@
     const tier = state.modelingTier;
     const isCustom = tier === 'custom';
 
-    els.estimateTotal.textContent = isCustom
-      ? '추후 협의'
-      : OrderEstimate.getTotalRangeText(r, tier);
+    els.estimateTotal.textContent = OrderEstimate.getModelingFeeText(tier);
+    if (els.estimateMoldNote) {
+      els.estimateMoldNote.textContent = OrderEstimate.getMoldPerPieceText();
+    }
     els.estimatePanel.hidden = false;
   }
 
@@ -295,6 +335,10 @@
   function submitOrder() {
     const state = OrderState.getState();
     if (!state.estimate) return;
+    if (state.imageSource === 'has' && (state.images || []).some(function (item) { return item.loading; })) {
+      alert('이미지를 처리하는 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
     const btn = els.btnNext;
     const prevText = btn.textContent;
     btn.textContent = '이미지 업로드 중...';
@@ -342,10 +386,10 @@
       selectImageSource('has');
       var file = dataUrlToFile(data.screenshot, 'studio_design.png');
       if (file) {
-        var err = OrderImageUpload.addFiles([file]);
-        if (err) showError('images', err);
-        else clearError('images');
-        OrderImageUpload.renderList(els.imageList);
+        OrderImageUpload.addFiles([file]).then(function (err) {
+          if (err) showError('images', err);
+          else clearError('images');
+        });
       }
     } else if (!OrderState.getState().imageSource) {
       selectImageSource('none');
@@ -388,17 +432,18 @@
     });
     if (els.imageInput) {
       els.imageInput.addEventListener('change', () => {
-        if (!els.imageInput.files || !els.imageInput.files.length) return;
-        const err = OrderImageUpload.addFiles(els.imageInput.files);
+        const files = Array.from(els.imageInput.files || []);
         els.imageInput.value = '';
-        if (err) showError('images', err);
-        else clearError('images');
-        OrderImageUpload.renderList(els.imageList);
-        updateNextButtonState();
+        if (!files.length) return;
+        OrderImageUpload.addFiles(files).then((err) => {
+          if (err) showError('images', err);
+          else clearError('images');
+        });
       });
     }
     document.addEventListener('order-images-changed', () => {
       clearError('images');
+      OrderImageUpload.renderList(els.imageList);
       updateNextButtonState();
     });
     [els.contactPhone, els.contactEmail].forEach((el, i) => {
@@ -454,10 +499,12 @@
         initTiers();
         initShapes();
         bindEvents();
+        bindEstimateNotice();
         initialized = true;
       }
       syncFormFromState();
       showStep(1);
+      showEstimateNotice();
     },
 
     resetToLanding() {

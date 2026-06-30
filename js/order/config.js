@@ -29,6 +29,9 @@ window.OrderConfig = {
   IMAGE_COMPRESS_MAX_SIZE: 1600,
   IMAGE_COMPRESS_QUALITY: 0.82,
   IMAGE_COMPRESS_MIN_BYTES: 300 * 1024,
+  /* 썸네일 미리보기용 (그리드 표시) */
+  IMAGE_PREVIEW_MAX_SIZE: 480,
+  IMAGE_PREVIEW_QUALITY: 0.8,
 };
 
 OrderConfig.TOTAL_STEPS = OrderConfig.STEPS.length;

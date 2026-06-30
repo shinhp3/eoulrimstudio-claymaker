@@ -64,8 +64,16 @@
     if (!state.imageSource) {
       return { valid: false, errors: { images: '참고 이미지 보유 여부를 선택해주세요.' } };
     }
-    if (state.imageSource === 'has' && state.images.length < 1) {
-      return { valid: false, errors: { images: '참고 이미지를 업로드해주세요.' } };
+    if (state.imageSource === 'has') {
+      if ((state.images || []).some(function (item) { return item.loading; })) {
+        return { valid: false, errors: { images: '이미지를 처리하는 중입니다. 잠시만 기다려주세요.' } };
+      }
+      var readyCount = (state.images || []).filter(function (item) {
+        return !item.loading && item.file;
+      }).length;
+      if (readyCount < 1) {
+        return { valid: false, errors: { images: '참고 이미지를 업로드해주세요.' } };
+      }
     }
     if (state.images.length > OrderConfig.MAX_IMAGES) {
       return { valid: false, errors: { images: '이미지는 최대 ' + OrderConfig.MAX_IMAGES + '장까지 첨부할 수 있습니다.' } };

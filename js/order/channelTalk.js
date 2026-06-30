@@ -33,10 +33,11 @@
     buildSelectionLines(state).forEach(line => lines.push(line));
 
     if (isCustom) {
-      lines.push('- 예상 제작 비용: 추후 협의');
+      lines.push('- 예상 모델링 비용: 추후 협의');
     } else {
-      lines.push('- 예상 제작 비용: ' + OrderEstimate.getTotalRangeText(r, tier));
+      lines.push('- 예상 모델링 비용: ' + OrderEstimate.getModelingFeeText(tier));
     }
+    lines.push('- 석고 몰드: ' + OrderEstimate.getMoldPerPieceText());
 
     const desc = state.description.trim();
     if (desc) {

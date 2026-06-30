@@ -35,9 +35,11 @@ function resizeRenderer() {
 
 // ── Scene (Toss TDS palette) ─────────────────────────────────────────────────
 const BG = 0xf9fafb;
-const CLAY = 0x082a52;    // clay blue (deeper)
-const ACCENT = 0x3182f6;
-const GUIDE = 0x1d4ed8;   // size box outline (darker than accent)
+const CLAY = 0x0d1014;    // near-black clay (default)
+const CLAY_DEFAULT_HEX = '#0d1014';
+const CLAY_COLOR_STORAGE_KEY = 'clayStudioColor';
+const ACCENT = 0x191f28;
+const GUIDE = 0x6b7684;   // size box outline
 const WALL_THICKNESS_CM = 0.3; // fixed 3mm
 
 const SIZE_MIN = 0.5;
@@ -82,7 +84,7 @@ const key = new THREE.SpotLight(0xffffff, 4.0, 500, Math.PI/4.2, 0.5, 1.0);
 key.position.set(25, 50, 35); key.castShadow = true;
 key.shadow.mapSize.set(1024,1024); key.shadow.bias = -0.0008;
 scene.add(key); scene.add(key.target);
-const fill = new THREE.DirectionalLight(0xe8f3ff, 1.0);
+const fill = new THREE.DirectionalLight(0xf2f4f6, 0.95);
 fill.position.set(-25, 15, -10);
 scene.add(fill);
 
@@ -301,9 +303,73 @@ function redoProfile() {
 
 // ── Clay meshes: outer + inner wall (5mm) + solid bottom cap ────────────────
 const clayMat = new THREE.MeshStandardMaterial({
-  color: CLAY, roughness: 0.42, metalness: 0.08,
-  emissive: 0x0a3568, emissiveIntensity: 0.12
+  color: CLAY, roughness: 0.52, metalness: 0.03,
+  emissive: 0x050608, emissiveIntensity: 0.04
 });
+
+let clayColorHex = CLAY_DEFAULT_HEX;
+
+function normalizeClayColorHex(hex) {
+  const h = String(hex || '').trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(h) ? h : CLAY_DEFAULT_HEX;
+}
+
+function applyClayMaterialColor(mat, hex) {
+  const color = new THREE.Color(hex);
+  mat.color.copy(color);
+  mat.emissive.copy(color).multiplyScalar(0.32);
+  mat.needsUpdate = true;
+}
+
+function syncClayMeshColors() {
+  [clayWall, clayBottom].forEach(mesh => {
+    if (mesh && mesh.material) applyClayMaterialColor(mesh.material, clayColorHex);
+  });
+}
+
+function getClayColorInputs() {
+  return [
+    document.getElementById('clayColorInput'),
+    document.getElementById('clayColorInputMobile')
+  ].filter(Boolean);
+}
+
+function syncClayColorInputs(hex) {
+  getClayColorInputs().forEach(input => {
+    if (input.value.toLowerCase() !== hex) input.value = hex;
+  });
+}
+
+function setClayColor(hex, options) {
+  const opts = options || {};
+  const normalized = normalizeClayColorHex(hex);
+  clayColorHex = normalized;
+  applyClayMaterialColor(clayMat, normalized);
+  syncClayMeshColors();
+  syncClayColorInputs(normalized);
+  if (!opts.skipSave) {
+    try { localStorage.setItem(CLAY_COLOR_STORAGE_KEY, normalized); } catch (e) { /* ignore */ }
+  }
+}
+
+function initClayColorControl() {
+  let saved = CLAY_DEFAULT_HEX;
+  try {
+    const stored = localStorage.getItem(CLAY_COLOR_STORAGE_KEY);
+    if (stored) saved = normalizeClayColorHex(stored);
+  } catch (e) { /* ignore */ }
+  const inputs = getClayColorInputs();
+  if (!inputs.length) {
+    setClayColor(saved, { skipSave: true });
+    return;
+  }
+  syncClayColorInputs(saved);
+  setClayColor(saved, { skipSave: true });
+  inputs.forEach(input => {
+    input.addEventListener('input', () => setClayColor(input.value));
+    input.addEventListener('change', () => setClayColor(input.value));
+  });
+}
 
 let clayGroup = null;
 let clayWall = null;
@@ -426,7 +492,7 @@ floor.rotation.x = -Math.PI/2;
 floor.receiveShadow = true;
 scene.add(floor);
 
-const grid = new THREE.GridHelper(FLOOR_BASE, 80, 0xc9e2ff, 0xe5e8eb);
+const grid = new THREE.GridHelper(FLOOR_BASE, 80, 0xd1d6db, 0xe5e8eb);
 grid.position.y = 0.01;
 scene.add(grid);
 
@@ -573,6 +639,7 @@ scene.add(hlDisc);
 
 let sculptTheta = 0;
 
+initClayColorControl();
 createClay();
 
 // ── Camera orbit ──────────────────────────────────────────────────────────────
@@ -930,7 +997,53 @@ function onSmoothClick() {
   updateClayFast();
   syncSizeControlsToActualSize();
 }
+let captureModeBackup = null;
+
+function getClayCaptureSpan() {
+  const { height, diameter } = getActualSize();
+  return Math.max(height, diameter, SIZE_MIN);
+}
+
+function setModelOnlyMode(active) {
+  if (active) {
+    captureModeBackup = {
+      floor: floor.visible,
+      grid: grid.visible,
+      hlDisc: hlDisc.visible,
+      sizeGuide: sizeGuide ? sizeGuide.visible : false,
+      cardCompare: cardCompareGroup ? cardCompareGroup.visible : false,
+      fog: scene.fog,
+      hlOpacity: hlMat.opacity,
+    };
+    floor.visible = false;
+    grid.visible = false;
+    hlDisc.visible = false;
+    if (sizeGuide) sizeGuide.visible = false;
+    if (cardCompareGroup) cardCompareGroup.visible = false;
+    scene.fog = null;
+    hlMat.opacity = 0;
+    return;
+  }
+  if (!captureModeBackup) return;
+  floor.visible = captureModeBackup.floor;
+  grid.visible = captureModeBackup.grid;
+  hlDisc.visible = captureModeBackup.hlDisc;
+  if (sizeGuide) sizeGuide.visible = captureModeBackup.sizeGuide;
+  if (cardCompareGroup) cardCompareGroup.visible = captureModeBackup.cardCompare;
+  scene.fog = captureModeBackup.fog;
+  hlMat.opacity = captureModeBackup.hlOpacity;
+  captureModeBackup = null;
+}
+
+function onCaptureClick() {
+  if (isMobileLayout()) return;
+  if (typeof window.clayStudioOpenCaptureDialog === 'function') {
+    window.clayStudioOpenCaptureDialog();
+  }
+}
+
 document.getElementById('btnSmooth').addEventListener('click', onSmoothClick);
+document.getElementById('btnCaptureDesk').addEventListener('click', onCaptureClick);
 document.getElementById('btnSmoothDock').addEventListener('click', onSmoothClick);
 document.getElementById('btnSizeCompareM').addEventListener('click', toggleSizeCompare);
 document.getElementById('btnSizeCompareDock').addEventListener('click', toggleSizeCompare);
@@ -984,6 +1097,51 @@ window.exportClayProfile = function exportClayProfile() {
     );
   }
   return data;
+};
+
+window.clayStudioCaptureApi = {
+  scene,
+  getClayCaptureSpan,
+  getOrbitState() {
+    return {
+      theta: orbit.theta,
+      phi: orbit.phi,
+      radius: orbit.radius,
+      targetY: orbit.targetY,
+      zoomMin: orbit.zoomMin,
+      zoomMax: orbit.zoomMax,
+    };
+  },
+  setModelOnlyMode,
+  renderForCapture() {
+    renderer.render(scene, camera);
+    const src = renderer.domElement;
+    const w = src.width;
+    const h = src.height;
+    const size = Math.min(w, h);
+    const sx = Math.floor((w - size) / 2);
+    const sy = Math.floor((h - size) / 2);
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = size;
+    cropCanvas.height = size;
+    const ctx = cropCanvas.getContext('2d');
+    if (!ctx) return src.toDataURL('image/png');
+    ctx.drawImage(src, sx, sy, size, size, 0, 0, size, size);
+    return cropCanvas.toDataURL('image/png');
+  },
+  renderSettings: {
+    toneMapping: THREE.ACESFilmicToneMapping,
+    toneMappingExposure: 1.45,
+    pixelRatio: Math.min(devicePixelRatio, 2),
+  },
+};
+
+window.clayStudioGetColor = function clayStudioGetColor() {
+  return clayColorHex;
+};
+
+window.clayStudioSetColor = function clayStudioSetColor(hex) {
+  setClayColor(hex);
 };
 
 window.clayStudioCapture = function clayStudioCapture() {

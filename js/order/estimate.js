@@ -59,6 +59,7 @@
       premium: { fee: 250000 },
       custom: { fee: 0 },
     },
+    MOLD_PER_PIECE_FEE: 50000,
   };
 
   var SHAPES = {
@@ -258,6 +259,16 @@
     return shape.useY ? (x + ' × ' + y + ' × ' + z + ' mm') : ('지름 ' + x + ' × 높이 ' + z + ' mm');
   }
 
+  function getModelingFeeText(tier) {
+    if (tier === 'custom') return '추후 협의';
+    var mc = getModelingCost(tier);
+    return fmt(mc.fee) + '원';
+  }
+
+  function getMoldPerPieceText() {
+    return '피스당 5만원';
+  }
+
   function getTotalRangeText(result, tier) {
     if (tier === 'custom') return '추후 협의';
     var packageFee = getPackageFee(tier);
@@ -271,6 +282,8 @@
     fmt,
     estimateManual,
     formatDimText,
+    getModelingFeeText,
+    getMoldPerPieceText,
     getTotalRangeText,
   };
 })();

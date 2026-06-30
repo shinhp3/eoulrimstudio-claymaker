@@ -26,9 +26,7 @@
     </article>
 
     <a href="studio.html" class="btn-studio-open btn-studio-open--landing">
-      <svg class="btn-studio-open__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-      </svg>
+      <img class="btn-studio-open__icon btn-studio-open__logo" src="assets/claystudio_logo.svg" alt="" width="32" height="32" aria-hidden="true">
       <span class="btn-studio-open__text">
         <span class="btn-studio-open__label">Clay Studio</span>
         <span class="btn-studio-open__sub">3D로 형태를 만들고 예상 견적을 확인해보세요</span>
@@ -60,6 +58,11 @@
       </svg>
     </button>
     <h1 class="order-header__title">주문 제작 의뢰</h1>
+    <button type="button" class="order-header__help" id="btnOrderHelp" aria-label="예상 견적 안내 보기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.5-1.5 1.2-1.5 2.2"/><path d="M12 17h.01"/>
+      </svg>
+    </button>
   </header>
 
   <nav class="stepper" id="stepper" aria-label="진행 단계"></nav>
@@ -168,8 +171,18 @@
         <h2 class="step-panel__question" id="step5Title">예상 견적 · 연락처</h2>
 
         <div class="estimate-panel" id="estimatePanel" hidden>
-          <p class="estimate-panel__label">예상 제작 비용 <span class="estimate-panel__note">(참고용)</span></p>
-          <p class="estimate-panel__total" id="estimateTotal">—</p>
+          <p class="estimate-panel__heading">예상 견적 <span class="estimate-panel__note">(참고용)</span></p>
+          <div class="estimate-panel__breakdown">
+            <div class="estimate-panel__item">
+              <span class="estimate-panel__item-label">예상 모델링 비용</span>
+              <p class="estimate-panel__total" id="estimateTotal">—</p>
+            </div>
+            <span class="estimate-panel__operator" aria-hidden="true">+</span>
+            <div class="estimate-panel__item">
+              <span class="estimate-panel__item-label">석고 몰드</span>
+              <p class="estimate-panel__mold" id="estimateMoldNote">피스당 5만원</p>
+            </div>
+          </div>
           <p class="estimate-panel__disclaimer">형상 복잡도에 따라 실제 금액은 달라질 수 있습니다. 채널톡 상담 후 최종 확정됩니다.</p>
         </div>
 
@@ -196,6 +209,37 @@
   </footer>
 </div>
 
+<!-- 예상 견적 안내 -->
+<dialog id="estimateNoticeDialog" class="estimate-notice-dialog" aria-labelledby="estimateNoticeTitle">
+  <div class="estimate-notice-dialog__inner">
+    <h2 id="estimateNoticeTitle" class="estimate-notice-dialog__title">예상 견적을 확인해 주세요</h2>
+    <div class="estimate-notice-dialog__body">
+      <p class="estimate-notice-dialog__lead">현재 표시되는 금액은 입력해 주신 정보를 바탕으로 계산된 <strong>예상 견적</strong>입니다.</p>
+
+      <div class="estimate-notice-dialog__section">
+        <p>실제 제작 금액은 아래 요소에 따라 달라질 수 있습니다.</p>
+        <ul class="estimate-notice-dialog__list">
+          <li>제품의 크기와 형태</li>
+          <li>몰드 분할 방식</li>
+          <li>제작 난이도</li>
+          <li>3D 모델링 및 추가 작업 여부</li>
+        </ul>
+      </div>
+
+      <div class="estimate-notice-dialog__section">
+        <p>보내주신 참고 이미지와 제작 내용을 꼼꼼히 검토한 뒤,<br>정확한 최종 견적과 제작 가능 여부를 안내드립니다.</p>
+      </div>
+
+      <div class="estimate-notice-dialog__section">
+        <p>예상 견적과 최종 견적에 차이가 있는 경우에는<br>먼저 변경 내용을 설명드리고,<br>고객님께서 확인하신 후 제작을 진행합니다.</p>
+      </div>
+
+      <p class="estimate-notice-dialog__closing">부담 없이 예상 금액을 확인해 보시고,<br>궁금한 점이나 추가로 전달하실 내용이 있다면 함께 남겨주세요.</p>
+    </div>
+    <button type="button" class="btn btn-primary estimate-notice-dialog__btn" id="estimateNoticeConfirm">확인했습니다</button>
+  </div>
+</dialog>
+
 <!-- Clay Studio 임베드 오버레이 -->
 <div id="studioOverlay" class="studio-overlay" hidden aria-modal="true" role="dialog" aria-label="Clay Studio">
   <iframe id="studioFrame" class="studio-overlay__frame" title="Clay Studio 3D 도면 만들기"></iframe>
@@ -204,11 +248,11 @@
 <script src="js/order/config.js?v=20260625-form-flow"></script>
 <script src="js/order/estimate.js?v=20260625-form-flow"></script>
 <script src="js/order/state.js?v=20260625-form-flow"></script>
-<script src="js/order/validation.js?v=20260625-form-flow"></script>
+<script src="js/order/validation.js?v=20260625-preview-fix"></script>
 <script src="js/order/stepper.js?v=20260625-form-flow"></script>
-<script src="js/order/imageUpload.js?v=20260625-form-flow"></script>
+<script src="js/order/imageUpload.js?v=20260625-preview-fix"></script>
 <script src="js/order/channelTalk.js?v=20260625-form-flow"></script>
-<script src="js/order/app.js?v=20260625-form-flow-studio"></script>
+<script src="js/order/app.js?v=20260625-preview-fix"></script>
 <script src="js/landing.js?v=20260625-form-flow"></script>
 </body>
 </html>
